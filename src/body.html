@@ -1,0 +1,169 @@
+<div class="app" id="app" data-mode="shop">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="3" width="28" height="12" rx="4" fill="#2f56c4"/><rect x="2" y="3" width="28" height="12" rx="4" fill="none" stroke="#c58f21" stroke-width="1.6"/><g fill="#8b929c"><circle cx="9" cy="17.5" r="1"/><circle cx="9" cy="20.5" r="1"/><circle cx="16" cy="17.5" r="1"/><circle cx="16" cy="20.5" r="1"/><circle cx="23" cy="17.5" r="1"/><circle cx="23" cy="20.5" r="1"/></g><rect x="5.5" y="22.5" width="7" height="7" rx="3" fill="#c58f21"/><rect x="12.5" y="22.5" width="7" height="7" rx="3" fill="#d0343f"/><rect x="19.5" y="22.5" width="7" height="7" rx="3" fill="#1b8657"/></svg>
+      <div><b>Family Sign Studio</b><span data-i18n="brandSub"></span></div>
+    </div>
+    <div class="seg" role="group" data-i18n-aria="modeLbl" aria-label="Mode">
+      <button type="button" id="modeShop" aria-pressed="true">Shop</button>
+      <button type="button" id="modeCust" aria-pressed="false">Customer</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="seg" role="group" id="langSeg" data-i18n-aria="langLbl" aria-label="Wika">
+      <button type="button" data-lang="tl" aria-pressed="true" title="Taglish">Taglish</button>
+      <button type="button" data-lang="en" aria-pressed="false" title="English">English</button>
+    </div>
+    <button type="button" class="btn" id="btnInstall" hidden><span data-ic="install"></span><span data-i18n="btnInstall"></span></button>
+    <button type="button" class="ibtn" id="btnUndo" data-ic="undo" title="Undo (Ctrl+Z)" aria-label="Undo"></button>
+    <button type="button" class="ibtn" id="btnRedo" data-ic="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"></button>
+    <button type="button" class="btn" id="btnOpen"><span data-ic="open"></span><span data-i18n="btnOpen"></span></button>
+    <button type="button" class="btn primary shop-btn" id="btnExport"><span data-ic="export"></span><span data-i18n="btnExport"></span></button>
+    <button type="button" class="btn primary cust-btn" id="btnSend"><span data-ic="send"></span><span data-i18n="btnSend"></span></button>
+  </header>
+
+  <div class="main">
+    <aside class="panel left" id="left">
+      <div class="sec cust-only" style="padding:14px 16px;flex-direction:column;gap:10px">
+        <div class="note" data-i18n-html="custNote"></div>
+        <button type="button" class="btn" id="btnRevert" data-i18n="btnRevert"></button>
+      </div>
+
+      <details class="sec shop-only" open>
+        <summary data-i18n="secSetup"></summary>
+        <div class="body">
+          <div class="row">
+            <button type="button" class="btn" id="btnBoard" data-i18n="btnBoard"></button>
+            <button type="button" class="btn" id="btnBlank" data-i18n="btnBlank"></button>
+          </div>
+          <div class="row">
+            <label class="fld" for="boardW"><span data-i18n="boardW"></span><input id="boardW" type="number" min="5" max="150" step="0.5" value="30"></label>
+            <label class="fld" for="boardH"><span data-i18n="boardH"></span><input id="boardH" type="number" min="5" max="150" step="0.5" value="21"></label>
+          </div>
+          <label class="fld" for="boardPreset"><span data-i18n="presetLbl"></span>
+            <select id="boardPreset">
+              <option value="" data-i18n="presetCustom"></option>
+              <option value="20x15">20 × 15 cm</option><option value="25x18">25 × 18 cm</option><option value="30x20">30 × 20 cm</option><option value="30x21">30 × 21 cm</option>
+              <option value="40x30">40 × 30 cm</option><option value="50x35">50 × 35 cm</option><option value="60x40">60 × 40 cm</option>
+            </select></label>
+          <label class="chk" id="lockWrap"><input type="checkbox" id="boardLock"> <span data-i18n="lockRatio"></span></label>
+          <p class="hint" id="cardHint" hidden></p>
+          <label class="fld" id="titleWrap" for="cardTitle"><span data-i18n="cardTitleLbl"></span><input id="cardTitle" class="txt" maxlength="28" data-i18n-ph="cardTitlePh" placeholder=""></label>
+          <button type="button" class="btn" id="btnSheet" data-i18n="btnSheet"></button>
+          <label class="chk"><input type="checkbox" id="optOutline" checked> <span data-i18n="optOutline"></span></label>
+          <p class="hint" data-i18n="hintUpload"></p>
+          <div class="row">
+            <button type="button" class="btn ghost" id="btnDemo" data-i18n="btnDemo"></button>
+            <button type="button" class="btn ghost" id="btnNew" data-i18n="btnNew"></button>
+          </div>
+        </div>
+      </details>
+
+      <details class="sec" open>
+        <summary><span data-i18n="secMembers"></span> <span class="count" id="memCount">0</span></summary>
+        <div class="body">
+          <div class="cnt">
+            <span class="lbl" data-i18n="countLbl"></span>
+            <div class="stepper">
+              <button type="button" id="cntMinus" data-i18n-aria="countMinus" aria-label="">−</button>
+              <input id="memN" type="number" min="0" max="20" step="1" inputmode="numeric" data-i18n-aria="countLbl" aria-label="">
+              <button type="button" id="cntPlus" data-i18n-aria="countPlus" aria-label="">+</button>
+            </div>
+          </div>
+          <p class="hint" data-i18n="countHint"></p>
+          <label class="chk shop-only"><input type="checkbox" id="lockCount"> <span data-i18n="lockCountLbl"></span></label>
+          <label class="fld" for="imgMode"><span data-i18n="imgModeLbl"></span>
+            <select id="imgMode"><option value="auto" data-i18n="imgAuto"></option><option value="cut" data-i18n="imgCut"></option><option value="photo" data-i18n="imgPhoto"></option></select></label>
+          <button type="button" class="btn" id="btnFigs"><span data-ic="upload"></span><span data-i18n="btnUploadPics"></span></button>
+          <p class="hint" data-i18n="hintUploadPics"></p>
+          <div class="memlist" id="memList"></div>
+          <p class="hint" data-i18n="hintMembers"></p></div>
+      </details>
+
+      <details class="sec" open>
+        <summary data-i18n="secLayout"></summary>
+        <div class="body" id="layBody" data-lm="rows">
+          <div class="seg" role="group" data-i18n-aria="lmodeLbl" aria-label="Uri ng ayos" id="lmode" style="align-self:stretch">
+            <button type="button" data-lm="rows" aria-pressed="true" style="flex:1" data-i18n="lmRows"></button>
+            <button type="button" data-lm="gen" aria-pressed="false" style="flex:1" data-i18n="lmGen"></button>
+            <button type="button" data-lm="tree" aria-pressed="false" style="flex:1" data-i18n="lmTree"></button>
+          </div>
+
+          <div class="lm-rows" style="display:flex;flex-direction:column;gap:8px">
+            <span class="lbl" id="chipLbl" data-i18n="chipLbl"></span>
+            <div class="chips" id="chips"></div>
+            <label class="fld" for="rowCustom"><span data-i18n="rowCustom"></span><input id="rowCustom" class="txt" placeholder="5,4" inputmode="numeric"></label>
+          </div>
+          <div class="lm-gen note" data-i18n-html="noteGen"></div>
+          <div class="lm-tree" style="display:flex;flex-direction:column;gap:8px">
+            <div class="note" data-i18n-html="noteTree"></div>
+            <button type="button" class="btn" id="btnGuess" data-i18n="btnGuess"></button>
+          </div>
+
+          <label class="fld lm-place" for="place"><span data-i18n="placeLbl"></span>
+            <select id="place">
+              <option value="grid" data-i18n="placeGrid"></option>
+              <option value="brick" data-i18n="placeBrick"></option>
+              <option value="left" data-i18n="placeLeft"></option>
+              <option value="right" data-i18n="placeRight"></option>
+            </select></label>
+          <div class="row shop-only">
+            <label class="fld" for="gap"><span data-i18n="gapLbl"></span><input id="gap" type="number" min="0" max="8" step="0.1"></label>
+            <label class="fld" for="chain"><span data-i18n="chainLbl"></span><input id="chain" type="number" min="0.8" max="12" step="0.1"></label>
+            <label class="fld" for="figH"><span data-i18n="figHLbl"></span><input id="figH" type="number" min="3" max="30" step="0.5"></label>
+          </div>
+          <label class="chk shop-only"><input type="checkbox" id="fit"> <span data-i18n="fitLbl"></span></label>
+          <label class="fld shop-only" for="maxKids"><span data-i18n="maxKidsLbl"></span><input id="maxKids" type="number" min="1" max="6" step="1"></label>
+          <button type="button" class="btn primary wide" id="btnLayout" data-i18n="btnLayout"></button>
+          <p class="hint" data-i18n="hintLayout"></p>
+        </div>
+      </details>
+    </aside>
+
+    <section class="stage" id="stage" data-i18n-aria="stageLbl" aria-label="Preview ng sign">
+      <canvas id="cv" data-i18n-aria="canvasLbl" aria-label=""></canvas>
+      <span class="pill demo" id="demoPill" hidden>DEMO</span>
+      <div class="tools" id="tools" hidden role="toolbar" aria-label="Alignment">
+        <button type="button" data-al="l" data-ic="al-l" data-i18n-title="alL" data-i18n-aria="alL"></button>
+        <button type="button" data-al="c" data-ic="al-c" data-i18n-title="alC" data-i18n-aria="alC"></button>
+        <button type="button" data-al="r" data-ic="al-r" data-i18n-title="alR" data-i18n-aria="alR"></button>
+        <span class="sep"></span>
+        <button type="button" data-al="t" data-ic="al-t" data-i18n-title="alT" data-i18n-aria="alT"></button>
+        <button type="button" data-al="m" data-ic="al-m" data-i18n-title="alM" data-i18n-aria="alM"></button>
+        <button type="button" data-al="b" data-ic="al-b" data-i18n-title="alB" data-i18n-aria="alB"></button>
+        <span class="sep"></span>
+        <button type="button" data-al="dh" data-ic="dist-h" data-i18n-title="alDh" data-i18n-aria="alDh"></button>
+        <button type="button" data-al="dv" data-ic="dist-v" data-i18n-title="alDv" data-i18n-aria="alDv"></button>
+        <span class="sep"></span>
+        <button type="button" data-al="swap" data-ic="swap" data-i18n-title="alSwap" data-i18n-aria="alSwap"></button>
+        <button type="button" data-al="cardc" data-ic="center" data-i18n-title="alCard" data-i18n-aria="alCard"></button>
+      </div>
+      <div class="stbar">
+        <label class="chk"><input type="checkbox" id="chkGuides" checked> <span data-i18n="chkGuides"></span></label>
+        <label class="chk"><input type="checkbox" id="chkNames" checked> <span data-i18n="chkNames"></span></label>
+        <label class="chk" id="ghostWrap" hidden><input type="checkbox" id="chkGhost"> <span data-i18n="chkGhost"></span></label>
+        <span id="posInfo" style="color:var(--ink2);font-variant-numeric:tabular-nums"></span>
+      </div>
+      <div class="zoom"><button type="button" id="zOut" aria-label="Zoom out">−</button><span id="zoomLbl">100%</span><button type="button" id="zIn" aria-label="Zoom in">+</button><button type="button" id="zFit">Fit</button></div>
+    </section>
+
+    <aside class="panel right">
+      <details class="sec" open><summary data-i18n="secSelected"></summary><div class="body" id="inspector"></div></details>
+      <details class="sec" open><summary><span data-i18n="secChecks"></span> <span id="chkBadge"></span></summary><div class="body" id="checks"></div></details>
+      <details class="sec" open><summary data-i18n="secSizes"></summary><div class="body" id="specs"></div></details>
+    </aside>
+  </div>
+
+  <div class="modal" id="modal" hidden>
+    <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <header><h2 id="mTitle"></h2><button type="button" class="ibtn" id="mClose" data-i18n-aria="close" aria-label="Isara">✕</button></header>
+      <div class="mbody" id="mBody"></div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <datalist id="nameList"></datalist>
+  <input type="file" id="fBoard" accept="image/*" hidden>
+  <input type="file" id="fMember" accept="image/*" hidden>
+  <input type="file" id="fFigs" accept="image/*" multiple hidden>
+  <input type="file" id="fSheet" accept="image/*" hidden>
+  <input type="file" id="fProject" accept=".json,application/json" hidden>
+</div>

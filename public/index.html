@@ -1,0 +1,2169 @@
+<!DOCTYPE html>
+<html lang="fil">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family Sign Studio</title>
+<meta name="description" content="Design and align hanging family welcome signs: preview the layout, let the customer adjust it, and send the shop a finished spec.">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sign Studio">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preload" as="font" type="font/woff2" href="fonts/figtree-latin-600-normal.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/bricolage-grotesque-latin-700-normal.woff2" crossorigin>
+<style>
+@font-face { font-family: "Figtree"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/figtree-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Figtree"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/figtree-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Figtree"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/figtree-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Bricolage Grotesque"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/bricolage-grotesque-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Bricolage Grotesque"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/bricolage-grotesque-latin-700-normal.woff2") format("woff2"); }
+/* Layout idea: tool rail left (setup, members, auto-layout), working canvas centre, inspector and checks right. */
+:root {
+  --ink: #1b2336;
+  --ink2: #566079;
+  --paper: #f2f3f7;
+  --panel: #ffffff;
+  --line: #dde1ea;
+  --acc: #2f56c4;
+  --acc-soft: #e6ecfb;
+  --gold: #c58f21;
+  --err: #d0343f;
+  --warn: #c97d0b;
+  --ok: #1b8657;
+  --stage: #e8ebf1;
+  --f-d: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --f-b: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 14px/1.4 var(--f-b); -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+/* top bar */
+.top { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; margin-right: 6px; }
+.brand svg { width: 30px; height: 30px; flex: none; }
+.brand b { font: 700 17px/1.1 var(--f-d); display: block; letter-spacing: -.01em; }
+.brand span { font-size: 12px; color: var(--ink2); }
+.top .seg button { padding: 5px 10px; }
+#btnInstall { border-color: var(--acc); color: var(--acc); }
+.seg { display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 9px; padding: 2px; }
+.seg button { border: 0; background: none; padding: 5px 12px; border-radius: 7px; color: var(--ink2); font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(20,30,60,.16); }
+.spacer { flex: 1; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 6px 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
+.btn:hover { border-color: #b9c1d3; background: #fafbfd; }
+.btn.primary { background: var(--acc); border-color: var(--acc); color: #fff; }
+.btn.primary:hover { background: #2548a8; }
+.btn.ghost { background: transparent; }
+.btn.wide { width: 100%; padding: 9px; }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn svg, .ibtn svg { width: 16px; height: 16px; flex: none; }
+.ibtn { width: 32px; height: 32px; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; display: inline-grid; place-items: center; padding: 0; }
+.ibtn:hover { border-color: #b9c1d3; background: #fafbfd; }
+.ibtn:disabled { opacity: .35; cursor: default; }
+
+/* main */
+.main { display: grid; grid-template-columns: 322px minmax(0, 1fr) 296px; min-height: 0; }
+.panel { overflow-y: auto; background: var(--panel); min-height: 0; }
+.panel.left { border-right: 1px solid var(--line); }
+.panel.right { border-left: 1px solid var(--line); }
+.sec { border-bottom: 1px solid var(--line); }
+.sec > summary { list-style: none; cursor: pointer; padding: 11px 16px; font: 700 13px var(--f-d); letter-spacing: .02em; text-transform: uppercase; color: var(--ink2); display: flex; align-items: center; gap: 8px; }
+.sec > summary::-webkit-details-marker { display: none; }
+.sec > summary::after { content: ""; margin-left: auto; width: 7px; height: 7px; border-right: 2px solid var(--ink2); border-bottom: 2px solid var(--ink2); transform: rotate(45deg); transition: transform .15s; }
+.sec[open] > summary::after { transform: rotate(-135deg); }
+.sec .body { padding: 2px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.count { background: var(--acc-soft); color: var(--acc); border-radius: 99px; padding: 0 8px; font: 700 12px var(--f-b); letter-spacing: 0; }
+.row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.row > .btn { flex: 1 1 120px; }
+.fld { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--ink2); font-weight: 600; flex: 1 1 80px; min-width: 70px; }
+.body > .fld, .mbody > .fld { flex: none; }
+.fld input, .fld select, .txt { border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; background: #fff; color: var(--ink); width: 100%; min-width: 0; }
+.chk { display: flex; gap: 8px; align-items: center; font-weight: 600; font-size: 13px; }
+.chk input { width: 16px; height: 16px; accent-color: var(--acc); }
+.hint { margin: 0; font-size: 12px; color: var(--ink2); }
+.note { background: var(--acc-soft); border-radius: 8px; padding: 9px 11px; font-size: 12.5px; color: #24367a; }
+
+/* members */
+.memlist { display: flex; flex-direction: column; gap: 6px; }
+.mem { border: 1px solid var(--line); border-radius: 9px; padding: 7px; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; background: #fff; }
+.mem.sel { border-color: var(--acc); background: var(--acc-soft); }
+.mem .th { grid-row: span 2; position: relative; width: 38px; height: 46px; padding: 0; border: 0; border-radius: 5px; background: repeating-conic-gradient(#f1f2f6 0 25%, #fff 0 50%) 0 0 / 10px 10px; }
+.mem .th img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.mem .th .cam { position: absolute; right: -5px; bottom: -5px; width: 17px; height: 17px; border-radius: 99px; background: var(--acc); color: #fff; display: grid; place-items: center; border: 2px solid #fff; }
+.mem .th .cam svg { width: 9px; height: 9px; }
+.mem.drop, .stage.dropping { outline: 2px dashed var(--acc); outline-offset: -3px; background: var(--acc-soft); }
+.cnt { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.stepper { display: inline-flex; align-items: stretch; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+.stepper button { width: 34px; height: 34px; border: 0; background: var(--paper); font: 700 18px/1 var(--f-b); }
+.stepper button:hover:not(:disabled) { background: var(--acc-soft); }
+.stepper button:disabled { opacity: .35; cursor: default; }
+.stepper input { width: 54px; height: 34px; border: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-radius: 0; text-align: center; font-weight: 700; -moz-appearance: textfield; }
+.stepper input::-webkit-inner-spin-button, .stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.mem .nm { border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 3px 6px; font-weight: 700; width: 100%; min-width: 0; }
+.mem .nm:hover, .mem .nm:focus { border-color: var(--line); background: #fff; }
+.mem .mb { display: flex; gap: 2px; }
+.mem .mb button { width: 24px; height: 24px; border: 0; background: none; border-radius: 6px; display: grid; place-items: center; color: var(--ink2); padding: 0; }
+.mem .mb button:hover { background: rgba(30,50,100,.1); }
+.mem .mb svg { width: 14px; height: 14px; }
+.mem .mm { grid-column: 2 / 4; display: flex; gap: 6px; align-items: center; font-size: 11.5px; color: var(--ink2); font-weight: 600; }
+.mem .mm select { border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; background: #fff; min-width: 0; flex: 1; max-width: 130px; font-size: 12px; }
+.mem .mm select.g { flex: none; max-width: 52px; }
+
+/* layout chips */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 4px 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chip:hover { border-color: #9fb0e0; }
+.chip[aria-pressed="true"] { background: var(--acc); border-color: var(--acc); color: #fff; }
+.lbl { font-size: 12px; font-weight: 700; color: var(--ink2); }
+#layBody[data-lm="rows"] .lm-gen, #layBody[data-lm="rows"] .lm-tree,
+#layBody[data-lm="gen"] .lm-rows, #layBody[data-lm="gen"] .lm-tree,
+#layBody[data-lm="tree"] .lm-rows, #layBody[data-lm="tree"] .lm-gen,
+#layBody[data-lm="tree"] .lm-place { display: none !important; }
+
+/* stage */
+.stage { position: relative; min-width: 0; min-height: 0; background: var(--stage); overflow: hidden; touch-action: none; }
+.stage canvas { display: block; touch-action: none; }
+.tools { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; box-shadow: 0 4px 14px rgba(20,30,60,.14); max-width: calc(100% - 20px); overflow-x: auto; }
+.tools .sep { width: 1px; height: 20px; background: var(--line); margin: 0 3px; }
+.tools button { width: 32px; height: 32px; border: 0; background: none; border-radius: 7px; display: grid; place-items: center; padding: 0; }
+.tools button:hover:not(:disabled) { background: var(--acc-soft); }
+.tools button:disabled { opacity: .3; cursor: default; }
+.tools svg { width: 18px; height: 18px; }
+.zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; box-shadow: 0 4px 14px rgba(20,30,60,.12); }
+.zoom button { height: 28px; min-width: 28px; border: 0; background: none; border-radius: 7px; font-weight: 700; padding: 0 6px; }
+.zoom button:hover { background: var(--acc-soft); }
+.zoom span { min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink2); }
+.stbar { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 14px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; box-shadow: 0 4px 14px rgba(20,30,60,.12); flex-wrap: wrap; max-width: calc(100% - 190px); }
+.stbar .chk { font-size: 12.5px; }
+.stbar .chk input { width: 15px; height: 15px; }
+.pill { display: inline-block; border-radius: 99px; padding: 1px 9px; font-size: 11.5px; font-weight: 700; }
+.pill.demo { position: absolute; left: 12px; top: 12px; background: var(--gold); color: #fff; padding: 3px 11px; }
+
+/* inspector, checks, specs */
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat { background: var(--paper); border-radius: 8px; padding: 8px 10px; }
+.stat b { display: block; font: 700 17px var(--f-d); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11.5px; color: var(--ink2); font-weight: 600; }
+.iss { display: flex; gap: 8px; align-items: flex-start; border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; padding: 7px 9px; font-size: 12.5px; background: #fff; text-align: left; width: 100%; }
+.iss:hover { background: #fafbfd; }
+.iss.err { border-left-color: var(--err); } .iss.warn { border-left-color: var(--warn); } .iss.info { border-left-color: var(--acc); }
+.iss b { font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; flex: none; width: 46px; padding-top: 1px; }
+.iss.err b { color: var(--err); } .iss.warn b { color: var(--warn); } .iss.info b { color: var(--acc); }
+.okbox { border: 1px solid #bfe3d1; background: #eef9f3; color: #14653f; border-radius: 8px; padding: 9px 11px; font-weight: 600; font-size: 12.5px; }
+.badge { border-radius: 99px; padding: 0 8px; font: 700 12px var(--f-b); letter-spacing: 0; }
+.badge.err { background: #fbe4e6; color: var(--err); } .badge.warn { background: #fcefd6; color: var(--warn); } .badge.ok { background: #dff3e8; color: var(--ok); }
+.cust-only { display: none; }
+.app[data-mode="customer"] .shop-only { display: none !important; }
+.app[data-mode="customer"] .cust-only { display: flex; }
+.app[data-mode="shop"] .cust-btn { display: none; }
+.app[data-mode="customer"] .shop-btn { display: none; }
+
+/* modal + toast */
+.modal { position: fixed; inset: 0; background: rgba(20,28,48,.5); display: grid; place-items: center; padding: 16px; z-index: 50; }
+.mcard { background: var(--panel); border-radius: 14px; width: min(640px, 100%); max-height: 92%; overflow: auto; box-shadow: 0 20px 60px rgba(10,20,50,.35); }
+.mcard > header { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.mcard h2 { margin: 0; font: 700 18px var(--f-d); flex: 1; }
+.mbody { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
+.mbody img.pv { max-width: 100%; max-height: 260px; object-fit: contain; align-self: center; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.dlrow { display: flex; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.dlrow div { flex: 1; min-width: 0; } .dlrow b { display: block; } .dlrow small { color: var(--ink2); }
+.dlrow .btn { flex: none; }
+textarea.txt { min-height: 110px; font: 12px/1.4 ui-monospace, Menlo, monospace; resize: vertical; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1b2336; color: #fff; padding: 9px 16px; border-radius: 10px; font-weight: 600; z-index: 60; box-shadow: 0 8px 24px rgba(0,0,0,.3); max-width: calc(100% - 32px); }
+
+@media (max-width: 1020px) {
+  .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; overflow-y: auto; }
+  .stage { order: -1; height: 62vh; min-height: 380px; }
+  .panel { overflow: visible; border: 0 !important; }
+  .stbar { max-width: calc(100% - 20px); bottom: 48px; }
+}
+@media (max-width: 640px) {
+  .top { gap: 8px; padding: 6px 10px; }
+  .brand { margin-right: 0; } .brand span { display: none; }
+  .spacer { display: none; }
+  .top .btn { padding: 6px 9px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+</style>
+</head>
+<body>
+<div class="app" id="app" data-mode="shop">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="3" width="28" height="12" rx="4" fill="#2f56c4"/><rect x="2" y="3" width="28" height="12" rx="4" fill="none" stroke="#c58f21" stroke-width="1.6"/><g fill="#8b929c"><circle cx="9" cy="17.5" r="1"/><circle cx="9" cy="20.5" r="1"/><circle cx="16" cy="17.5" r="1"/><circle cx="16" cy="20.5" r="1"/><circle cx="23" cy="17.5" r="1"/><circle cx="23" cy="20.5" r="1"/></g><rect x="5.5" y="22.5" width="7" height="7" rx="3" fill="#c58f21"/><rect x="12.5" y="22.5" width="7" height="7" rx="3" fill="#d0343f"/><rect x="19.5" y="22.5" width="7" height="7" rx="3" fill="#1b8657"/></svg>
+      <div><b>Family Sign Studio</b><span data-i18n="brandSub"></span></div>
+    </div>
+    <div class="seg" role="group" data-i18n-aria="modeLbl" aria-label="Mode">
+      <button type="button" id="modeShop" aria-pressed="true">Shop</button>
+      <button type="button" id="modeCust" aria-pressed="false">Customer</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="seg" role="group" id="langSeg" data-i18n-aria="langLbl" aria-label="Wika">
+      <button type="button" data-lang="tl" aria-pressed="true" title="Taglish">Taglish</button>
+      <button type="button" data-lang="en" aria-pressed="false" title="English">English</button>
+    </div>
+    <button type="button" class="btn" id="btnInstall" hidden><span data-ic="install"></span><span data-i18n="btnInstall"></span></button>
+    <button type="button" class="ibtn" id="btnUndo" data-ic="undo" title="Undo (Ctrl+Z)" aria-label="Undo"></button>
+    <button type="button" class="ibtn" id="btnRedo" data-ic="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"></button>
+    <button type="button" class="btn" id="btnOpen"><span data-ic="open"></span><span data-i18n="btnOpen"></span></button>
+    <button type="button" class="btn primary shop-btn" id="btnExport"><span data-ic="export"></span><span data-i18n="btnExport"></span></button>
+    <button type="button" class="btn primary cust-btn" id="btnSend"><span data-ic="send"></span><span data-i18n="btnSend"></span></button>
+  </header>
+
+  <div class="main">
+    <aside class="panel left" id="left">
+      <div class="sec cust-only" style="padding:14px 16px;flex-direction:column;gap:10px">
+        <div class="note" data-i18n-html="custNote"></div>
+        <button type="button" class="btn" id="btnRevert" data-i18n="btnRevert"></button>
+      </div>
+
+      <details class="sec shop-only" open>
+        <summary data-i18n="secSetup"></summary>
+        <div class="body">
+          <div class="row">
+            <button type="button" class="btn" id="btnBoard" data-i18n="btnBoard"></button>
+            <button type="button" class="btn" id="btnBlank" data-i18n="btnBlank"></button>
+          </div>
+          <div class="row">
+            <label class="fld" for="boardW"><span data-i18n="boardW"></span><input id="boardW" type="number" min="5" max="150" step="0.5" value="30"></label>
+            <label class="fld" for="boardH"><span data-i18n="boardH"></span><input id="boardH" type="number" min="5" max="150" step="0.5" value="21"></label>
+          </div>
+          <label class="fld" for="boardPreset"><span data-i18n="presetLbl"></span>
+            <select id="boardPreset">
+              <option value="" data-i18n="presetCustom"></option>
+              <option value="20x15">20 × 15 cm</option><option value="25x18">25 × 18 cm</option><option value="30x20">30 × 20 cm</option><option value="30x21">30 × 21 cm</option>
+              <option value="40x30">40 × 30 cm</option><option value="50x35">50 × 35 cm</option><option value="60x40">60 × 40 cm</option>
+            </select></label>
+          <label class="chk" id="lockWrap"><input type="checkbox" id="boardLock"> <span data-i18n="lockRatio"></span></label>
+          <p class="hint" id="cardHint" hidden></p>
+          <label class="fld" id="titleWrap" for="cardTitle"><span data-i18n="cardTitleLbl"></span><input id="cardTitle" class="txt" maxlength="28" data-i18n-ph="cardTitlePh" placeholder=""></label>
+          <button type="button" class="btn" id="btnSheet" data-i18n="btnSheet"></button>
+          <label class="chk"><input type="checkbox" id="optOutline" checked> <span data-i18n="optOutline"></span></label>
+          <p class="hint" data-i18n="hintUpload"></p>
+          <div class="row">
+            <button type="button" class="btn ghost" id="btnDemo" data-i18n="btnDemo"></button>
+            <button type="button" class="btn ghost" id="btnNew" data-i18n="btnNew"></button>
+          </div>
+        </div>
+      </details>
+
+      <details class="sec" open>
+        <summary><span data-i18n="secMembers"></span> <span class="count" id="memCount">0</span></summary>
+        <div class="body">
+          <div class="cnt">
+            <span class="lbl" data-i18n="countLbl"></span>
+            <div class="stepper">
+              <button type="button" id="cntMinus" data-i18n-aria="countMinus" aria-label="">−</button>
+              <input id="memN" type="number" min="0" max="20" step="1" inputmode="numeric" data-i18n-aria="countLbl" aria-label="">
+              <button type="button" id="cntPlus" data-i18n-aria="countPlus" aria-label="">+</button>
+            </div>
+          </div>
+          <p class="hint" data-i18n="countHint"></p>
+          <label class="chk shop-only"><input type="checkbox" id="lockCount"> <span data-i18n="lockCountLbl"></span></label>
+          <label class="fld" for="imgMode"><span data-i18n="imgModeLbl"></span>
+            <select id="imgMode"><option value="auto" data-i18n="imgAuto"></option><option value="cut" data-i18n="imgCut"></option><option value="photo" data-i18n="imgPhoto"></option></select></label>
+          <button type="button" class="btn" id="btnFigs"><span data-ic="upload"></span><span data-i18n="btnUploadPics"></span></button>
+          <p class="hint" data-i18n="hintUploadPics"></p>
+          <div class="memlist" id="memList"></div>
+          <p class="hint" data-i18n="hintMembers"></p></div>
+      </details>
+
+      <details class="sec" open>
+        <summary data-i18n="secLayout"></summary>
+        <div class="body" id="layBody" data-lm="rows">
+          <div class="seg" role="group" data-i18n-aria="lmodeLbl" aria-label="Uri ng ayos" id="lmode" style="align-self:stretch">
+            <button type="button" data-lm="rows" aria-pressed="true" style="flex:1" data-i18n="lmRows"></button>
+            <button type="button" data-lm="gen" aria-pressed="false" style="flex:1" data-i18n="lmGen"></button>
+            <button type="button" data-lm="tree" aria-pressed="false" style="flex:1" data-i18n="lmTree"></button>
+          </div>
+
+          <div class="lm-rows" style="display:flex;flex-direction:column;gap:8px">
+            <span class="lbl" id="chipLbl" data-i18n="chipLbl"></span>
+            <div class="chips" id="chips"></div>
+            <label class="fld" for="rowCustom"><span data-i18n="rowCustom"></span><input id="rowCustom" class="txt" placeholder="5,4" inputmode="numeric"></label>
+          </div>
+          <div class="lm-gen note" data-i18n-html="noteGen"></div>
+          <div class="lm-tree" style="display:flex;flex-direction:column;gap:8px">
+            <div class="note" data-i18n-html="noteTree"></div>
+            <button type="button" class="btn" id="btnGuess" data-i18n="btnGuess"></button>
+          </div>
+
+          <label class="fld lm-place" for="place"><span data-i18n="placeLbl"></span>
+            <select id="place">
+              <option value="grid" data-i18n="placeGrid"></option>
+              <option value="brick" data-i18n="placeBrick"></option>
+              <option value="left" data-i18n="placeLeft"></option>
+              <option value="right" data-i18n="placeRight"></option>
+            </select></label>
+          <div class="row shop-only">
+            <label class="fld" for="gap"><span data-i18n="gapLbl"></span><input id="gap" type="number" min="0" max="8" step="0.1"></label>
+            <label class="fld" for="chain"><span data-i18n="chainLbl"></span><input id="chain" type="number" min="0.8" max="12" step="0.1"></label>
+            <label class="fld" for="figH"><span data-i18n="figHLbl"></span><input id="figH" type="number" min="3" max="30" step="0.5"></label>
+          </div>
+          <label class="chk shop-only"><input type="checkbox" id="fit"> <span data-i18n="fitLbl"></span></label>
+          <label class="fld shop-only" for="maxKids"><span data-i18n="maxKidsLbl"></span><input id="maxKids" type="number" min="1" max="6" step="1"></label>
+          <button type="button" class="btn primary wide" id="btnLayout" data-i18n="btnLayout"></button>
+          <p class="hint" data-i18n="hintLayout"></p>
+        </div>
+      </details>
+    </aside>
+
+    <section class="stage" id="stage" data-i18n-aria="stageLbl" aria-label="Preview ng sign">
+      <canvas id="cv" data-i18n-aria="canvasLbl" aria-label=""></canvas>
+      <span class="pill demo" id="demoPill" hidden>DEMO</span>
+      <div class="tools" id="tools" hidden role="toolbar" aria-label="Alignment">
+        <button type="button" data-al="l" data-ic="al-l" data-i18n-title="alL" data-i18n-aria="alL"></button>
+        <button type="button" data-al="c" data-ic="al-c" data-i18n-title="alC" data-i18n-aria="alC"></button>
+        <button type="button" data-al="r" data-ic="al-r" data-i18n-title="alR" data-i18n-aria="alR"></button>
+        <span class="sep"></span>
+        <button type="button" data-al="t" data-ic="al-t" data-i18n-title="alT" data-i18n-aria="alT"></button>
+        <button type="button" data-al="m" data-ic="al-m" data-i18n-title="alM" data-i18n-aria="alM"></button>
+        <button type="button" data-al="b" data-ic="al-b" data-i18n-title="alB" data-i18n-aria="alB"></button>
+        <span class="sep"></span>
+        <button type="button" data-al="dh" data-ic="dist-h" data-i18n-title="alDh" data-i18n-aria="alDh"></button>
+        <button type="button" data-al="dv" data-ic="dist-v" data-i18n-title="alDv" data-i18n-aria="alDv"></button>
+        <span class="sep"></span>
+        <button type="button" data-al="swap" data-ic="swap" data-i18n-title="alSwap" data-i18n-aria="alSwap"></button>
+        <button type="button" data-al="cardc" data-ic="center" data-i18n-title="alCard" data-i18n-aria="alCard"></button>
+      </div>
+      <div class="stbar">
+        <label class="chk"><input type="checkbox" id="chkGuides" checked> <span data-i18n="chkGuides"></span></label>
+        <label class="chk"><input type="checkbox" id="chkNames" checked> <span data-i18n="chkNames"></span></label>
+        <label class="chk" id="ghostWrap" hidden><input type="checkbox" id="chkGhost"> <span data-i18n="chkGhost"></span></label>
+        <span id="posInfo" style="color:var(--ink2);font-variant-numeric:tabular-nums"></span>
+      </div>
+      <div class="zoom"><button type="button" id="zOut" aria-label="Zoom out">−</button><span id="zoomLbl">100%</span><button type="button" id="zIn" aria-label="Zoom in">+</button><button type="button" id="zFit">Fit</button></div>
+    </section>
+
+    <aside class="panel right">
+      <details class="sec" open><summary data-i18n="secSelected"></summary><div class="body" id="inspector"></div></details>
+      <details class="sec" open><summary><span data-i18n="secChecks"></span> <span id="chkBadge"></span></summary><div class="body" id="checks"></div></details>
+      <details class="sec" open><summary data-i18n="secSizes"></summary><div class="body" id="specs"></div></details>
+    </aside>
+  </div>
+
+  <div class="modal" id="modal" hidden>
+    <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <header><h2 id="mTitle"></h2><button type="button" class="ibtn" id="mClose" data-i18n-aria="close" aria-label="Isara">✕</button></header>
+      <div class="mbody" id="mBody"></div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <datalist id="nameList"></datalist>
+  <input type="file" id="fBoard" accept="image/*" hidden>
+  <input type="file" id="fMember" accept="image/*" hidden>
+  <input type="file" id="fFigs" accept="image/*" multiple hidden>
+  <input type="file" id="fSheet" accept="image/*" hidden>
+  <input type="file" id="fProject" accept=".json,application/json" hidden>
+</div>
+
+<script>
+'use strict';
+(function () {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const uid = () => Math.random().toString(36).slice(2, 9);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const fmt = v => (Math.round(v * 10) / 10).toFixed(1);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const INSET = 0.35;      // cm: hole sits this far inside the acrylic edge
+const MINCHAIN = 0.3;    // cm: shortest chain the auto-parent will accept
+const MAXM = 20;         // most members one sign can have
+
+/* ------------------------------------------------------------------ state */
+const S = {
+  mode: 'shop',
+  board: null,            // {asset, wCm, hCm, lock, sized, blank, title}
+  members: [],            // {id,name,asset,x,y,sz,h,parent,gen}
+  sel: new Set(),
+  set: { gap: 0.8, chain: 3, figH: 9, fitF: 1, fit: true, maxKids: 2, guides: true, names: true, place: 'grid', lmode: 'rows' },
+  rowSizes: null,
+  view: { z: 18, ox: 30, oy: 30 },
+  base: null,             // {m:{id:{x,y,h}}}  layout as the shop left it
+  ghost: false,
+  meta: { customer: '', note: '', lockCount: false },
+  manual: false,          // true once somebody moved things by hand (so uploads do not re-arrange everything)
+  links: [], linksDirty: true, issues: []
+};
+const assets = new Map();
+
+const mw = m => m.h * m.asset.w / m.asset.h;
+const rectOf = m => ({ x: m.x, y: m.y, w: mw(m), h: m.h });
+function boardRect() {
+  const b = S.board; if (!b) return { x: 0, y: 0, w: 30, h: 20 };
+  return { x: 0, y: 0, w: b.wCm, h: b.hCm || b.wCm * b.asset.h / b.asset.w };
+}
+const boardLowest = () => { const r = boardRect(); return S.board ? r.y + S.board.asset.maxBot * r.h - INSET : 0; };
+const topAnchor = m => ({ x: m.x + m.asset.topFx * mw(m), y: m.y + m.asset.topFy * m.h + INSET });
+const botAnchorX = m => m.x + m.asset.botFx * mw(m);
+const lowestY = m => m.y + m.asset.maxBot * m.h - INSET;
+function applyHeights() { for (const m of S.members) m.h = S.set.figH * m.sz * S.set.fitF; }
+
+/* ---------------------------------------------------------------- history */
+const Hist = { stack: [], idx: -1 };
+function snap() {
+  return JSON.stringify({
+    members: S.members.map(m => ({ id: m.id, name: m.name, a: m.asset.id, x: m.x, y: m.y, sz: m.sz, h: m.h, parent: m.parent, gen: m.gen })),
+    board: S.board ? { a: S.board.asset.id, w: S.board.wCm, h: S.board.hCm, lock: S.board.lock, sized: S.board.sized, blank: S.board.blank, title: S.board.title } : null,
+    set: S.set, rowSizes: S.rowSizes
+  });
+}
+function restore(js) {
+  const o = JSON.parse(js);
+  S.members = o.members.map(m => ({ id: m.id, name: m.name, asset: assets.get(m.a), x: m.x, y: m.y, sz: m.sz, h: m.h, parent: m.parent, gen: m.gen })).filter(m => m.asset);
+  if (o.board) { const a = assets.get(o.board.a); if (a) S.board = { asset: a, wCm: o.board.w, hCm: o.board.h, lock: o.board.lock, sized: o.board.sized, blank: o.board.blank, title: o.board.title || '' }; } else S.board = null;
+  Object.assign(S.set, o.set); S.rowSizes = o.rowSizes;
+  S.sel = new Set([...S.sel].filter(id => S.members.some(m => m.id === id)));
+}
+function commit() {
+  const s = snap();
+  if (Hist.stack[Hist.idx] === s) { changed(false); return; }
+  Hist.stack = Hist.stack.slice(0, Hist.idx + 1); Hist.stack.push(s);
+  if (Hist.stack.length > 120) Hist.stack.shift();
+  Hist.idx = Hist.stack.length - 1;
+  changed(true);
+}
+function resetHistory() { Hist.stack = [snap()]; Hist.idx = 0; changed(true); }
+function undo() { if (Hist.idx > 0) { Hist.idx--; restore(Hist.stack[Hist.idx]); changed(true); } }
+function redo() { if (Hist.idx < Hist.stack.length - 1) { Hist.idx++; restore(Hist.stack[Hist.idx]); changed(true); } }
+
+/* ------------------------------------------------------- image pipeline */
+function loadImage(src) {
+  return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error(tr('errImage'))); im.src = src; });
+}
+async function fileToImage(file) {
+  const url = URL.createObjectURL(file);
+  try { return await loadImage(url); } finally { setTimeout(() => URL.revokeObjectURL(url), 4000); }
+}
+function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); c.getContext('2d', { willReadFrequently: true }); return c; }
+function toCanvas(im, maxDim) {
+  const w = im.naturalWidth || im.width, h = im.naturalHeight || im.height;
+  const s = Math.min(1, maxDim / Math.max(w, h));
+  const c = mkCanvas(w * s, h * s);
+  c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+  return c;
+}
+function hasAlpha(c) {
+  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  let n = 0, t = 0;
+  for (let i = 3; i < d.length; i += 20) { t++; if (d[i] < 245) n++; }
+  return n > t * 0.004;
+}
+function removeBg(c, tol) {
+  tol = tol || 30;
+  const ctx = c.getContext('2d'), W = c.width, H = c.height;
+  const id = ctx.getImageData(0, 0, W, H), d = id.data;
+  const med = a => { a.sort((x, y) => x - y); return a[a.length >> 1]; };
+  const R = [], G = [], B = [];
+  const patch = (x0, y0) => { for (let y = y0; y < y0 + 5; y++) for (let x = x0; x < x0 + 5; x++) { const i = (Math.min(H - 1, y) * W + Math.min(W - 1, x)) * 4; R.push(d[i]); G.push(d[i + 1]); B.push(d[i + 2]); } };
+  patch(0, 0); patch(W - 5, 0); patch(0, H - 5); patch(W - 5, H - 5);
+  const br = med(R), bg = med(G), bb = med(B);
+  const dist = i => { const a = d[i] - br, b = d[i + 1] - bg, c2 = d[i + 2] - bb; return Math.sqrt(a * a + b * b + c2 * c2); };
+  const vis = new Uint8Array(W * H), st = new Int32Array(W * H); let sp = 0;
+  const push = p => { if (!vis[p] && dist(p * 4) <= tol) { vis[p] = 1; st[sp++] = p; } };
+  for (let x = 0; x < W; x++) { push(x); push((H - 1) * W + x); }
+  for (let y = 0; y < H; y++) { push(y * W); push(y * W + W - 1); }
+  while (sp) {
+    const p = st[--sp], x = p % W, y = (p / W) | 0;
+    d[p * 4 + 3] = 0;
+    if (x > 0) push(p - 1); if (x < W - 1) push(p + 1); if (y > 0) push(p - W); if (y < H - 1) push(p + W);
+  }
+  // soften: drop 1-2 px fringe that is still nearly background coloured
+  for (let pass = 0; pass < 2; pass++) {
+    const kill = [];
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      const p = y * W + x, i = p * 4;
+      if (d[i + 3] === 0) continue;
+      if ((d[i - 4 + 3] === 0 || d[i + 4 + 3] === 0 || d[i - W * 4 + 3] === 0 || d[i + W * 4 + 3] === 0) && dist(i) <= tol * 2.2) kill.push(i + 3);
+    }
+    for (const k of kill) d[k] = 0;
+  }
+  ctx.putImageData(id, 0, 0);
+}
+function trim(c, pad) {
+  const W = c.width, H = c.height, d = c.getContext('2d').getImageData(0, 0, W, H).data;
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 12) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  if (x1 < 0) return c;
+  pad = pad || 0;
+  const o = mkCanvas(x1 - x0 + 1 + pad * 2, y1 - y0 + 1 + pad * 2);
+  o.getContext('2d').drawImage(c, x0, y0, x1 - x0 + 1, y1 - y0 + 1, pad, pad, x1 - x0 + 1, y1 - y0 + 1);
+  return o;
+}
+function fitMax(c, maxH, maxW) {
+  const s = Math.min(1, maxH / c.height, (maxW || 1e9) / c.width);
+  if (s >= 1) return c;
+  const o = mkCanvas(c.width * s, c.height * s);
+  const x = o.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(c, 0, 0, o.width, o.height);
+  return o;
+}
+function addOutline(c, r) {
+  const pad = r + 2, o = mkCanvas(c.width + pad * 2, c.height + pad * 2), x = o.getContext('2d');
+  const w = mkCanvas(c.width, c.height), wx = w.getContext('2d');
+  wx.drawImage(c, 0, 0); wx.globalCompositeOperation = 'source-in'; wx.fillStyle = '#fff'; wx.fillRect(0, 0, w.width, w.height);
+  for (const rr of [r, r * 0.7, r * 0.4]) for (let a = 0; a < 360; a += 12) {
+    const t = a * Math.PI / 180; x.drawImage(w, pad + Math.cos(t) * rr, pad + Math.sin(t) * rr);
+  }
+  x.drawImage(w, pad, pad); x.drawImage(c, pad, pad);
+  return o;
+}
+/* mask, silhouette edges and chain-hole anchors */
+function analyze(a) {
+  const L = 128, sc = L / Math.max(a.w, a.h);
+  const MW = Math.max(8, Math.round(a.w * sc)), MH = Math.max(8, Math.round(a.h * sc));
+  const sm = mkCanvas(MW, MH), sx = sm.getContext('2d', { willReadFrequently: true });
+  sx.imageSmoothingQuality = 'high'; sx.drawImage(a.canvas, 0, 0, MW, MH);
+  const d = sx.getImageData(0, 0, MW, MH).data, m = new Uint8Array(MW * MH);
+  for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] > 40 ? 1 : 0;
+  const top = new Float32Array(MW).fill(-1), bot = new Float32Array(MW).fill(-1), lowOk = new Uint8Array(MW);
+  let minTop = 1, maxBot = 0;
+  for (let c = 0; c < MW; c++) {
+    let t = -1, b = -1, n = 0;
+    for (let r = 0; r < MH; r++) if (m[r * MW + c]) { if (t < 0) t = r; b = r; n++; }
+    if (n >= 2) { top[c] = t / MH; bot[c] = (b + 1) / MH; minTop = Math.min(minTop, top[c]); maxBot = Math.max(maxBot, bot[c]); }
+  }
+  const span = maxBot - minTop;
+  for (let c = 0; c < MW; c++) lowOk[c] = bot[c] >= 0 && bot[c] >= maxBot - 0.22 * span ? 1 : 0;
+  const pick = (arr, ok) => {
+    let best = -1, bd = 1e9; const mid = (MW - 1) / 2;
+    for (let c = 0; c < MW; c++) if (ok(c)) { const dd = Math.abs(c - mid); if (dd < bd) { bd = dd; best = c; } }
+    return best < 0 ? Math.floor(MW / 2) : best;
+  };
+  const tc = pick(top, c => top[c] >= 0 && top[c] <= minTop + 0.06 * span);
+  const bc = pick(bot, c => lowOk[c]);
+  a.mask = { w: MW, h: MH, d: m };
+  a.edge = { top, bot }; a.lowOk = lowOk; a.minTop = minTop; a.maxBot = maxBot;
+  a.topFx = (tc + 0.5) / MW; a.topFy = top[tc] >= 0 ? top[tc] : minTop;
+  a.botFx = (bc + 0.5) / MW;
+  return a;
+}
+function buildAsset(canvas, name, id) {
+  const a = { id: id || uid(), name: name || 'Figure', canvas, w: canvas.width, h: canvas.height };
+  analyze(a); assets.set(a.id, a); return a;
+}
+/* import one image file as a figure/board canvas */
+async function prepCanvas(file, opt) {
+  const im = await fileToImage(file);
+  let c = toCanvas(im, opt.maxDim || 1600);
+  const alpha = hasAlpha(c);
+  if (!alpha) removeBg(c, opt.tol || 30);
+  return { c, alpha };
+}
+function finishCanvas(c, o) {
+  c = trim(c, 0);
+  c = fitMax(c, o.maxH || 640, o.maxW);
+  if (o.outline) c = addOutline(c, Math.max(2, Math.round((o.board ? c.width * 0.006 : c.height * 0.02))));
+  return c;
+}
+/* split a sheet holding many figures into separate canvases (reading order) */
+function splitSheet(canvas) {
+  const W = canvas.width, H = canvas.height;
+  const s = Math.min(1, 800 / Math.max(W, H)), sw = Math.max(8, Math.round(W * s)), sh = Math.max(8, Math.round(H * s)), N = sw * sh;
+  const sm = mkCanvas(sw, sh), sx = sm.getContext('2d', { willReadFrequently: true });
+  sx.drawImage(canvas, 0, 0, sw, sh);
+  const d = sx.getImageData(0, 0, sw, sh).data, op = new Uint8Array(N), core = new Uint8Array(N);
+  for (let i = 0; i < N; i++) {
+    const a = d[i * 4 + 3]; if (a <= 40) continue; op[i] = 1;
+    if (!(Math.min(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]) >= 232 && a >= 200)) core[i] = 1;   // white sticker outlines do not join figures
+  }
+  const lab = new Int32Array(N), comps = [], q = new Int32Array(N);
+  for (let p0 = 0; p0 < N; p0++) {
+    if (!core[p0] || lab[p0]) continue;
+    const id = comps.length + 1; let qh = 0, qt = 0; q[qt++] = p0; lab[p0] = id;
+    let x0 = sw, y0 = sh, x1 = 0, y1 = 0, area = 0;
+    while (qh < qt) {
+      const p = q[qh++], x = p % sw, y = (p / sw) | 0; area++;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= sw || ny >= sh) continue;
+        const np = ny * sw + nx; if (core[np] && !lab[np]) { lab[np] = id; q[qt++] = np; }
+      }
+    }
+    comps.push({ id, area, x0, y0, x1, y1 });
+  }
+  if (!comps.length) return [];
+  const maxA = Math.max(...comps.map(c => c.area)), big = comps.filter(c => c.area >= maxA * 0.08), remap = new Int32Array(comps.length + 1);
+  const near = Math.max(sw, sh) * 0.04;
+  for (const c of comps) {
+    if (big.includes(c)) { remap[c.id] = c.id; continue; }
+    let best = null, bd = 1e9;
+    for (const b of big) { const gx = Math.max(0, b.x0 - c.x1, c.x0 - b.x1), gy = Math.max(0, b.y0 - c.y1, c.y0 - b.y1), g = Math.hypot(gx, gy); if (g < bd) { bd = g; best = b; } }
+    if (best && bd <= near) { remap[c.id] = best.id; best.x0 = Math.min(best.x0, c.x0); best.y0 = Math.min(best.y0, c.y0); best.x1 = Math.max(best.x1, c.x1); best.y1 = Math.max(best.y1, c.y1); }
+  }
+  for (let i = 0; i < N; i++) if (lab[i]) lab[i] = remap[lab[i]];
+  // give the white outline pixels to the figure they surround (grow labels through opaque pixels only)
+  let front = []; for (let i = 0; i < N; i++) if (lab[i]) front.push(i);
+  for (let step = 0, G = Math.ceil(0.04 * Math.max(sw, sh)); step < G && front.length; step++) {
+    const nf = [];
+    for (const p of front) {
+      const x = p % sw, y = (p / sw) | 0, l = lab[p];
+      if (x > 0 && op[p - 1] && !lab[p - 1]) { lab[p - 1] = l; nf.push(p - 1); }
+      if (x < sw - 1 && op[p + 1] && !lab[p + 1]) { lab[p + 1] = l; nf.push(p + 1); }
+      if (y > 0 && op[p - sw] && !lab[p - sw]) { lab[p - sw] = l; nf.push(p - sw); }
+      if (y < sh - 1 && op[p + sw] && !lab[p + sw]) { lab[p + sw] = l; nf.push(p + sw); }
+    }
+    front = nf;
+  }
+  const outs = [];
+  for (const c of big) {
+    const fx0 = Math.max(0, Math.floor(c.x0 / s) - 8), fy0 = Math.max(0, Math.floor(c.y0 / s) - 8);
+    const fx1 = Math.min(W, Math.ceil((c.x1 + 1) / s) + 8), fy1 = Math.min(H, Math.ceil((c.y1 + 1) / s) + 8);
+    const cw = fx1 - fx0, ch = fy1 - fy0, oc = mkCanvas(cw, ch), ox = oc.getContext('2d', { willReadFrequently: true });
+    ox.drawImage(canvas, fx0, fy0, cw, ch, 0, 0, cw, ch);
+    const id = ox.getImageData(0, 0, cw, ch), dd = id.data;
+    for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+      const lx = Math.min(sw - 1, ((fx0 + x) * s) | 0), ly = Math.min(sh - 1, ((fy0 + y) * s) | 0);
+      if (lab[ly * sw + lx] !== c.id) dd[(y * cw + x) * 4 + 3] = 0;
+    }
+    ox.putImageData(id, 0, 0);
+    outs.push({ canvas: oc, cx: (c.x0 + c.x1) / 2, cy: (c.y0 + c.y1) / 2, h: c.y1 - c.y0 });
+  }
+  outs.sort((a, b) => a.cy - b.cy);
+  const rows = [];
+  for (const o of outs) {
+    const row = rows.find(r2 => Math.abs(r2.cy - o.cy) < Math.min(r2.h, o.h) * 0.45);
+    if (row) { row.items.push(o); row.cy = row.items.reduce((t, i) => t + i.cy, 0) / row.items.length; row.h = Math.max(row.h, o.h); }
+    else rows.push({ cy: o.cy, h: o.h, items: [o] });
+  }
+  rows.sort((a, b) => a.cy - b.cy);
+  return rows.flatMap(r2 => r2.items.sort((a, b) => a.cx - b.cx)).map(o => o.canvas);
+}
+
+/* -------------------------------------------------------------------- i18n
+   Every user-facing string lives here as key: [Taglish, English].
+   HTML uses data-i18n / data-i18n-html / data-i18n-title / data-i18n-aria / data-i18n-ph.
+   JS uses tr('key', { var: value }). Placeholders look like {name}. */
+const LANG_KEY = 'fss-lang';
+let LANG = 'tl';
+const D = {
+  /* header */
+  appTitle: ['Family Sign Studio', 'Family Sign Studio'],
+  brandSub: ['Layout ng hanging family sign', 'Hanging family sign layout'],
+  modeLbl: ['Mode', 'Mode'],
+  langLbl: ['Wika', 'Language'],
+  btnOpen: ['Buksan ang project', 'Open project'],
+  btnExport: ['I-export', 'Export'],
+  btnSend: ['Ipadala sa Shop', 'Send to shop'],
+  btnInstall: ['I-install ang app', 'Install app'],
+
+  /* left panel */
+  custNote: ['I-drag ang mga figure para ilipat. Gamitin ang Auto-ayos sa ibaba kung gusto mong ibang pagkakahanay. Kapag okay na, pindutin ang <b>Ipadala sa Shop</b>.',
+             'Drag the figures to move them. Use Auto-arrange below if you want a different alignment. When you\'re happy with it, press <b>Send to shop</b>.'],
+  btnRevert: ['Ibalik sa ayos ng shop', 'Reset to the shop\'s layout'],
+  secSetup: ['Card at mga figure', 'Card and figures'],
+  btnBoard: ['Pumili ng card image', 'Choose card image'],
+  boardW: ['Lapad ng card (cm)', 'Card width (cm)'],
+  btnFigs: ['Idagdag ang mga figure', 'Add figures'],
+  btnSheet: ['Sheet ng maraming figure', 'Multi-figure sheet'],
+  optOutline: ['Lagyan ng puting outline kung inalis ang background', 'Add a white outline when the background is removed'],
+  hintUpload: ['Pinakamaganda ang PNG na transparent ang background. Kung puti o solid ang background, kusa itong aalisin. Ang "Sheet" ay isang image na maraming figure. Kusa silang hihiwalayin ayon sa pagkakasunod (taas pababa, kaliwa pakanan).',
+               'Transparent-background PNGs work best. If the background is white or solid, it is removed automatically. A "Sheet" is one image with many figures; they are split automatically in order (top to bottom, left to right).'],
+  btnDemo: ['Demo', 'Demo'],
+  btnNew: ['Bagong project', 'New project'],
+  secMembers: ['Mga member', 'Members'],
+  hintMembers: ['Ang pagkakasunod sa listahan ang magtatakda kung sino ang mauuna sa kaliwa at sa itaas kapag nag-auto-ayos. Pindutin ang larawan ng member para mag-upload.',
+                'The order of this list decides who goes first (left, then top) when auto-arranging. Click a member\'s picture to upload one.'],
+  secLayout: ['Auto-ayos', 'Auto-arrange'],
+  lmodeLbl: ['Uri ng ayos', 'Layout type'],
+  lmRows: ['Mga row', 'Rows'],
+  lmGen: ['Henerasyon', 'Generations'],
+  lmTree: ['Family tree', 'Family tree'],
+  chipLbl: ['Ilang figure sa bawat row', 'Figures per row'],
+  chipLblN: ['Ilang figure sa bawat row ({n} lahat)', 'Figures per row ({n} total)'],
+  rowCustom: ['Sariling bilang (hal. 5,4)', 'Custom counts (e.g. 5,4)'],
+  noteGen: ['Itakda ang <b>Hen.</b> ng bawat member sa listahan (1 = pinakataas, hal. lolo at lola). Isang row ang bawat henerasyon.',
+            'Set each member\'s <b>Gen.</b> in the list (1 = top, e.g. grandparents). Each generation becomes one row.'],
+  noteTree: ['Piliin sa bawat member ang <b>Sabit kay</b>. Ang mga anak ay ilalagay sa ilalim ng magulang nila. Ang walang pinili ay nakasabit sa card.',
+             'For each member, choose <b>Hangs from</b>. Children are placed under their parent. Members with nothing chosen hang from the card.'],
+  btnGuess: ['Hulaan mula sa henerasyon', 'Guess from generations'],
+  placeLbl: ['Kapag kulang ang bilang sa isang row', 'When a row has fewer figures'],
+  placeGrid: ['Sa column, simetriko (may butas sa gitna)', 'Keep columns, symmetric (gap in the middle)'],
+  placeBrick: ['Sa gitna, nasa pagitan ng nasa itaas', 'Centered, between the figures above'],
+  placeLeft: ['Sa kaliwa', 'Align left'],
+  placeRight: ['Sa kanan', 'Align right'],
+  gapLbl: ['Pagitan (cm)', 'Gap (cm)'],
+  chainLbl: ['Chain (cm)', 'Chain (cm)'],
+  figHLbl: ['Taas ng figure', 'Figure height'],
+  fitLbl: ['Paliitin kung lalampas sa lapad ng card', 'Shrink if wider than the card'],
+  maxKidsLbl: ['Max na chain sa baba ng isang figure', 'Max chains under one figure'],
+  btnLayout: ['Ayusin ulit', 'Re-arrange'],
+  hintLayout: ['Binabalik ng "Ayusin ulit" ang lahat sa awtomatikong pwesto. Gumagana ang Undo.',
+               '"Re-arrange" puts everything back in its automatic position. Undo works.'],
+
+  /* stage */
+  stageLbl: ['Preview ng sign', 'Sign preview'],
+  canvasLbl: ['Preview ng hanging sign. I-drag ang mga figure para ilipat.', 'Hanging sign preview. Drag the figures to move them.'],
+  emptyStage: ['Pumili ng card (o blank card) sa kaliwa at itakda ang bilang ng member, o pindutin ang Demo.', 'Choose a card (or a blank card) on the left and set the number of members, or press Demo.'],
+  emptyMembers: ['Itakda ang bilang ng member sa kaliwa para makita ang ayos.', 'Set the number of members on the left to see the arrangement.'],
+  alL: ['I-align sa kaliwa', 'Align left'],
+  alC: ['I-align sa gitna (pahalang)', 'Align center (horizontal)'],
+  alR: ['I-align sa kanan', 'Align right'],
+  alT: ['I-align sa itaas', 'Align top'],
+  alM: ['I-align sa gitna (patayo)', 'Align middle (vertical)'],
+  alB: ['I-align sa baba', 'Align bottom'],
+  alDh: ['Pantay na pagitan (pahalang)', 'Distribute horizontally'],
+  alDv: ['Pantay na pagitan (patayo)', 'Distribute vertically'],
+  alSwap: ['Magpalit ng pwesto (piliin ang 2)', 'Swap positions (select 2)'],
+  alCard: ['Ilagay sa gitna ng card', 'Center on card'],
+  chkGuides: ['Guides', 'Guides'],
+  chkNames: ['Pangalan', 'Names'],
+  chkGhost: ['Ipakita ang orihinal na ayos', 'Show the original layout'],
+  nSelected: ['{n} napili', '{n} selected'],
+
+  /* right panel */
+  secSelected: ['Napili', 'Selected'],
+  secChecks: ['Production check', 'Production check'],
+  secSizes: ['Sukat', 'Measurements'],
+  close: ['Isara', 'Close'],
+
+  /* members list */
+  memberNameN: ['Pangalan ng member {n}', 'Member {n} name'],
+  memUp: ['Itaas sa listahan', 'Move up in the list'],
+  memDown: ['Ibaba sa listahan', 'Move down in the list'],
+  memDel: ['Alisin', 'Remove'],
+  hangsFrom: ['Sabit kay', 'Hangs from'],
+  hangsFromAria: ['Nakasabit kay', 'Hangs from'],
+  genShort: ['Hen.', 'Gen.'],
+  genAria: ['Henerasyon', 'Generation'],
+  parentAuto: ['Auto', 'Auto'],
+  parentCard: ['Card', 'Card'],
+  member: ['Member', 'Member'],
+  noFigures: ['Wala pang figure. Magdagdag sa itaas o pindutin ang Demo.', 'No figures yet. Add some above or press Demo.'],
+
+  /* layout panel */
+  addFiguresFirst: ['Magdagdag muna ng figures.', 'Add figures first.'],
+  toastTreeHelp: ['Piliin ang "Sabit kay" ng bawat member, o pindutin ang Hulaan mula sa henerasyon.', 'Choose "Hangs from" for each member, or press Guess from generations.'],
+  toastRowNums: ['Maglagay ng mga numero, hal. 5,4', 'Enter numbers, e.g. 5,4'],
+  toastRowSum: ['Dapat {want} ang kabuuan. Ngayon ay {got}.', 'The total must be {want}. Right now it is {got}.'],
+
+  /* inspector */
+  inspEmpty: ['Pumili ng figure sa stage o sa listahan para i-edit ang pwesto at laki. Shift+click o Shift+drag para pumili ng marami. Arrow keys para sa maliliit na galaw (Shift = 1 cm). Space+drag o drag sa walang laman para ilipat ang view.',
+              'Select a figure on the stage or in the list to edit its position and size. Shift+click or Shift+drag to select several. Arrow keys nudge it a little (Shift = 1 cm). Space+drag, or drag on empty space, to move the view.'],
+  inspMulti: ['Gamitin ang toolbar sa taas ng stage para mag-align, magpantay ng pagitan, o magpalit ng pwesto.', 'Use the toolbar above the stage to align, even out the spacing, or swap positions.'],
+  inspName: ['Pangalan', 'Name'],
+  inspHeight: ['Taas (cm)', 'Height (cm)'],
+  inspHangs: ['Nakasabit kay <b>{who}</b>. Haba ng chain: <b>{len} cm</b>.', 'Hangs from <b>{who}</b>. Chain length: <b>{len} cm</b>.'],
+  inspNoParent: ['Walang mapagsabitan.', 'Nothing to hang from.'],
+  inspXY: ['Ang X at Y ay mula sa kaliwa-itaas na sulok ng card.', 'X and Y are measured from the top-left corner of the card.'],
+  inspStraight: ['Itapat sa ibabaw (tuwid na chain)', 'Line up with the one above (straight chain)'],
+  inspCenter: ['Ilagay sa gitna ng card', 'Center on card'],
+  card: ['card', 'the card'],
+
+  /* checks */
+  lvlErr: ['Ayusin', 'Fix'],
+  lvlWarn: ['Tingnan', 'Check'],
+  lvlInfo: ['Tip', 'Tip'],
+  chkOk: ['Walang nakitang problema. Walang magkapatong, tuwid ang mga chain, at walang tumatama sa card.', 'No problems found. Nothing overlaps, the chains are straight, and nothing touches the card.'],
+  chkEmpty: ['Lalabas dito ang mga problema sa pagkakaayos.', 'Problems with the arrangement will show up here.'],
+  isNoBoard: ['Wala pang card. Mag-upload ng card o gamitin ang demo.', 'No card yet. Upload a card or use the demo.'],
+  isOverlap: ['Magkapatong sina {a} at {b}.', '{a} and {b} overlap.'],
+  isHitsBoard: ['Tumatama sa card si {a}.', '{a} touches the card.'],
+  isNoAnchor: ['Walang mapagsabitan si {a}. Ilipat sa ilalim ng card o ng ibang figure.', '{a} has nothing to hang from. Move it under the card or another figure.'],
+  isAbove: ['Nasa itaas ng nakasabitan si {a} ({p}).', '{a} is above the figure it hangs from ({p}).'],
+  isBlocked: ['Dumadaan ang chain ni {a} sa ibang figure.', '{a}\'s chain passes through another figure.'],
+  isShort: ['Masyadong maikli ang chain ni {a} ({len} cm).', '{a}\'s chain is too short ({len} cm).'],
+  isLong: ['Napakahaba ng chain ni {a} ({len} cm).', '{a}\'s chain is very long ({len} cm).'],
+  isSlant: ['Naka-anggulo ang chain ni {a}. Gamitin ang "Itapat sa ibabaw" para tumuwid.', '{a}\'s chain is slanted. Use "Line up with the one above" to straighten it.'],
+  isMaxKids: ['{n} chain ang nakasabit kay {a}. Max ay {max}.', '{n} chains hang from {a}. The max is {max}.'],
+  isCross: ['Nagkukrus ang chain ni {a} at {b}.', '{a}\'s and {b}\'s chains cross.'],
+
+  /* specs panel */
+  specCard: ['Card (cm)', 'Card (cm)'],
+  specTotal: ['Buong sukat (cm)', 'Overall size (cm)'],
+  specFigs: ['Mga figure', 'Figures'],
+  specAvg: ['Avg. chain (cm)', 'Avg. chain (cm)'],
+  specHint: ['Ang buong sukat ay mula sa tuktok ng card hanggang sa pinakababang figure.', 'The overall size runs from the top of the card to the lowest figure.'],
+
+  /* importing + project */
+  busyBoard: ['Pinoproseso ang card…', 'Processing the card…'],
+  busyFigs: ['Pinoproseso ang mga figure…', 'Processing the figures…'],
+  busySheet: ['Hinihiwalay ang mga figure sa sheet…', 'Splitting the figures from the sheet…'],
+  busyProject: ['Binubuksan ang project…', 'Opening the project…'],
+  errGeneric: ['May problema: {msg}', 'Something went wrong: {msg}'],
+  errImage: ['Hindi mabasa ang image', 'Could not read the image'],
+  errSheet: ['Walang nakitang figure sa sheet. Subukan ang transparent na PNG.', 'No figures found in the sheet. Try a transparent PNG.'],
+  errProject: ['Hindi ito project file ng app na ito.', 'This is not a project file from this app.'],
+  sheetSplit: ['{n} figure ang nahiwalay. Palitan ang mga pangalan sa listahan.', '{n} figures were found. Rename them in the list.'],
+  opened: ['Nabuksan: {who}', 'Opened: {who}'],
+  openedGhost: ['. I-on ang "Ipakita ang orihinal na ayos" para makita ang binago.', '. Turn on "Show the original layout" to see what changed.'],
+  reverted: ['Naibalik sa ayos ng shop.', 'Reset to the shop\'s layout.'],
+  updated: ['May bagong version ng app. I-refresh ang page para ma-update.', 'A new version of the app is ready. Refresh the page to update.'],
+  offlineReady: ['Handa na ang app para gamitin kahit walang internet.', 'The app is ready to use offline.'],
+
+  /* export / send */
+  saved: ['Na-save: {name}', 'Saved: {name}'],
+  saveFail: ['Hindi na-save ang file ({code}).', 'Could not save the file ({code}).'],
+  noDownload: ['Hindi makapag-download dito. Kopyahin na lang ang specs.', 'Downloads are not available here. Copy the specs instead.'],
+  download: ['I-download', 'Download'],
+  copyBtn: ['Kopyahin', 'Copy'],
+  copied: ['Nakopya ang specs.', 'Specs copied.'],
+  copyManual: ['Piliin at kopyahin ang text sa ibaba.', 'Select and copy the text below.'],
+  exportTitle: ['I-export', 'Export'],
+  exportBad: ['May {n} problema pa sa Production check. Mas mabuting ayusin bago ipadala.', 'There are still {n} problems in the Production check. Better to fix them before sending.'],
+  custName: ['Pangalan ng customer', 'Customer name'],
+  custNamePh: ['hal. Larios Family', 'e.g. Larios Family'],
+  noteProd: ['Note para sa production', 'Note for production'],
+  noteProdPh: ['hal. Matte finish, may glitter', 'e.g. Matte finish, with glitter'],
+  dlPreview: ['Preview (PNG)', 'Preview (PNG)'],
+  dlPreviewSub: ['Larawan ng buong sign na ipapakita sa customer.', 'An image of the whole sign to show the customer.'],
+  dlSheet: ['Spec sheet (PNG)', 'Spec sheet (PNG)'],
+  dlSheetSub: ['Preview kasama ang sukat, butas at haba ng chain ng bawat figure.', 'The preview plus each figure\'s size, hole position and chain length.'],
+  dlProjCust: ['Project para sa customer', 'Project for the customer'],
+  dlProjCustSub: ['Ipadala sa customer. Pagbukas sa app, simple na editor ang lalabas at makikita nila ang ayos ng shop.', 'Send this to the customer. When they open it in the app, a simple editor appears with the shop\'s layout.'],
+  dlProjShop: ['Project file (shop)', 'Project file (shop)'],
+  dlProjShopSub: ['Para mabuksan mo ulit ang buong editor mamaya.', 'So you can reopen the full editor later.'],
+  dlCopy: ['Specs bilang text', 'Specs as text'],
+  dlCopySub: ['Kopyahin para i-paste sa chat o ClickUp.', 'Copy it to paste into a chat or ClickUp.'],
+  specsAria: ['Specs na text', 'Specs as text'],
+  exportHint: ['Kapag hindi nag-download, pindutin ang Preview at i-save mula sa lalabas na kahon.', 'If the download does not start, press Preview and save it from the box that appears.'],
+  sendTitle: ['Ipadala sa Shop', 'Send to shop'],
+  sendBad: ['May {n} bagay na maaaring hindi magawa. Tingnan ang Production check sa kanan.', '{n} things may not be possible to make. Check the Production check on the right.'],
+  sendPvAlt: ['Preview ng ayos ng sign', 'Preview of the sign layout'],
+  yourName: ['Pangalan mo', 'Your name'],
+  yourNamePh: ['hal. Juan Larios', 'e.g. Juan Larios'],
+  noteShop: ['Note para sa shop (opsyonal)', 'Note for the shop (optional)'],
+  noteShopPh: ['hal. Gusto ko si Lolo sa gitna', 'e.g. I want Grandpa in the middle'],
+  dlProjSend: ['Project file ng ayos mo', 'Your layout project file'],
+  dlProjSendSub: ['Ito ang ipapadala sa shop. Dito nakasave ang eksaktong pwesto ng bawat figure.', 'This is what you send to the shop. It stores the exact position of every figure.'],
+  dlPreviewMine: ['Preview (PNG)', 'Preview (PNG)'],
+  dlPreviewMineSub: ['Larawan ng ayos mo, para madaling makita ng shop.', 'A picture of your layout so the shop can see it easily.'],
+  dlSummary: ['Buod bilang text', 'Summary as text'],
+  dlSummarySub: ['Kopyahin para i-paste sa Messenger o Viber.', 'Copy it to paste into Messenger or Viber.'],
+  summaryAria: ['Buod ng ayos', 'Layout summary'],
+  sendHint: ['Ipadala ang project file at ang preview sa shop sa Messenger, Viber o email.', 'Send the project file and the preview to the shop through Messenger, Viber or email.'],
+  sure: ['Sigurado ka ba?', 'Are you sure?'],
+  no: ['Hindi', 'No'],
+  yesGo: ['Oo, ituloy', 'Yes, continue'],
+  confirmDemo: ['Papalitan ng demo ang kasalukuyang layout.', 'The demo will replace the current layout.'],
+  confirmNew: ['Buburahin ang card, mga figure at ayos para magsimula ulit.', 'This clears the card, figures and layout so you can start over.'],
+
+  /* spec text + spec sheet */
+  txtTitle: ['HANGING FAMILY SIGN: SPECS', 'HANGING FAMILY SIGN: SPECS'],
+  txtSummary: ['Card: {card} cm | Buong sukat: {total} cm | {n} figure', 'Card: {card} cm | Overall size: {total} cm | {n} figures'],
+  txtRef: ['Lahat ng sukat ay mula sa kaliwa-itaas na sulok ng card.', 'All measurements are from the top-left corner of the card.'],
+  txtRow: ['{n}. {name}: taas {h} cm, kaliwa-itaas ({x}, {y}), butas sa itaas ({hx}, {hy}), nakasabit kay {parent}, chain {len} cm',
+           '{n}. {name}: height {h} cm, top-left ({x}, {y}), top hole ({hx}, {hy}), hangs from {parent}, chain {len} cm'],
+  shTitle: ['Hanging Family Sign: Layout', 'Hanging Family Sign: Layout'],
+  shLine: ['Card {card} cm   ·   Buong sukat {total} cm   ·   {n} figure', 'Card {card} cm   ·   Overall size {total} cm   ·   {n} figures'],
+  shCustomer: ['Customer: ', 'Customer: '],
+  shNote: ['Note: ', 'Note: '],
+  shColName: ['Pangalan', 'Name'],
+  shColH: ['Taas', 'Height'],
+  shColHole: ['Butas (X, Y)', 'Hole (X, Y)'],
+  shColParent: ['Sabit kay', 'Hangs from'],
+  shColChain: ['Chain', 'Chain'],
+  shFoot: ['Ang butas (X, Y) ay ang pwesto ng butas sa itaas ng figure, sukat sa cm mula sa kaliwa-itaas na sulok ng card.', 'The hole (X, Y) is the position of the hole at the top of each figure, in cm from the top-left corner of the card.'],
+
+  /* card size, member count, pictures */
+  btnBlank: ['Blank card', 'Blank card'],
+  boardH: ['Taas ng card (cm)', 'Card height (cm)'],
+  presetLbl: ['Karaniwang sukat', 'Common sizes'],
+  presetCustom: ['Sariling sukat', 'Custom size'],
+  lockRatio: ['Sundin ang ratio ng image', 'Match the image ratio'],
+  cardStretch: ['Naka-stretch ang image dahil iba ang ratio nito ({a}) sa size ng card ({b}). I-tick ang "Sundin ang ratio ng image" para ayusin.',
+                'The image is stretched because its ratio ({a}) differs from the card size ({b}). Tick "Match the image ratio" to fix it.'],
+  cardTitleLbl: ['Pangalan ng pamilya sa blank card', 'Family name on the blank card'],
+  cardTitlePh: ['hal. Dela Cruz', 'e.g. Dela Cruz'],
+  countLbl: ['Ilang member', 'Number of members'],
+  countMinus: ['Bawasan ang member', 'Fewer members'],
+  countPlus: ['Dagdagan ang member', 'More members'],
+  countHint: ['Hanggang 20 ang pwede. Lalabas agad ang ayos kahit wala pang larawan.', 'Up to 20. The arrangement shows right away, even without pictures yet.'],
+  lockCountLbl: ['Hindi mapapalitan ng customer ang bilang ng member', 'The customer cannot change the number of members'],
+  imgModeLbl: ['Kapag walang transparent na background ang larawan', 'When a picture has no transparent background'],
+  imgAuto: ['Auto (hulaan)', 'Auto (detect)'],
+  imgCut: ['Alisin ang background (cutout)', 'Remove the background (cutout)'],
+  imgPhoto: ['Gamitin bilang photo (walang cutout)', 'Use as a photo (no cutout)'],
+  btnUploadPics: ['Mag-upload ng mga larawan', 'Upload pictures'],
+  hintUploadPics: ['Mapupunta ang mga larawan sa mga member na wala pang larawan, ayon sa pagkakasunod. Pwede ring i-drag ang larawan sa isang member o sa stage. Kahit anong picture muna ang pwede; palitan na lang ng chibi mamaya.',
+                   'Pictures go to the members that have none yet, in order. You can also drag a picture onto a member or onto the stage. Any picture works for now; swap in the chibi later.'],
+  memPic: ['Lagyan o palitan ang larawan', 'Add or replace the picture'],
+  inspPic: ['Lagyan o palitan ang larawan', 'Add or replace the picture'],
+  isEmptySlots: ['{n} member pa ang walang larawan.', '{n} members still have no picture.'],
+  isTight: ['Napaliit ang mga figure sa {h} cm para magkasya sa card. Palakihin ang card o gumamit ng mas maraming row.', 'The figures had to shrink to {h} cm to fit the card. Make the card wider or use more rows.'],
+  maxReached: ['Hanggang {max} lang ang member. {n} na larawan ang hindi nadagdag.', 'The limit is {max} members. {n} pictures were not added.'],
+  countLocked: ['Naka-lock ng shop ang bilang ng member. Sa mga bakanteng slot lang napunta ang mga larawan; {n} ang hindi nadagdag.', 'The shop locked the number of members. Pictures only went into empty slots; {n} were not added.'],
+  countRemoved: ['Naalis ang {n} member na may larawan. Gamitin ang Undo kung nagkamali.', '{n} members with pictures were removed. Use Undo if that was a mistake.'],
+  draftRestored: ['Naibalik ang huling gawa mo sa device na ito.', 'Restored your last work on this device.'],
+  nameSuggest: ['Lolo,Lola,Tatay,Nanay,Kuya,Ate,Bunso,Baby,Tito,Tita,Anak,Apo,Pamangkin,Aso,Pusa', 'Grandpa,Grandma,Dad,Mom,Brother,Sister,Baby,Uncle,Aunt,Son,Daughter,Grandchild,Nephew,Niece,Dog,Cat'],
+
+  /* demo */
+  demoCard: ['Demo card', 'Demo card'],
+  demoLolo: ['Lolo', 'Grandpa'], demoLola: ['Lola', 'Grandma'], demoTatay: ['Tatay', 'Dad'], demoNanay: ['Nanay', 'Mom'],
+  demoTito: ['Tito', 'Uncle'], demoKuya: ['Kuya', 'Big bro'], demoAte: ['Ate', 'Big sis'], demoBunso: ['Bunso', 'Youngest'], demoBaby: ['Baby', 'Baby']
+};
+const tr = (key, v) => {
+  const e = D[key]; let s = e ? e[LANG === 'en' ? 1 : 0] : key;
+  if (v) s = s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
+  return s;
+};
+const DEMO_KEYS = ['demoLolo', 'demoLola', 'demoTatay', 'demoNanay', 'demoTito', 'demoKuya', 'demoAte', 'demoBunso', 'demoBaby'];
+function applyStaticLang() {
+  document.documentElement.lang = LANG === 'en' ? 'en' : 'fil';
+  document.title = tr('appTitle');
+  $$('[data-i18n]').forEach(el => { el.textContent = tr(el.dataset.i18n); });
+  $$('[data-i18n-html]').forEach(el => { el.innerHTML = tr(el.dataset.i18nHtml); });
+  for (const [attr, set] of [['title', 'i18nTitle'], ['aria-label', 'i18nAria'], ['placeholder', 'i18nPh']]) {
+    $$('[data-' + set.replace(/[A-Z]/g, c => '-' + c.toLowerCase()) + ']').forEach(el => { el.setAttribute(attr, tr(el.dataset[set])); });
+  }
+  $$('#langSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === LANG)));
+  const dl = $('#nameList'); if (dl) dl.innerHTML = tr('nameSuggest').split(',').map(n => `<option value="${esc(n.trim())}"></option>`).join('');
+}
+function setLang(l, persist) {
+  const old = LANG; LANG = l === 'en' ? 'en' : 'tl';
+  if (persist !== false) { try { localStorage.setItem(LANG_KEY, LANG); } catch (e) { /* private mode */ } }
+  applyStaticLang();
+  if (old !== LANG && typeof refreshAfterLang === 'function') refreshAfterLang(old);
+}
+function detectLang() {
+  try { const q = new URLSearchParams(location.search).get('lang'); if (q === 'en' || q === 'tl') { try { localStorage.setItem(LANG_KEY, q); } catch (e) { /* ignore */ } return q; } } catch (e) { /* ignore */ }
+  try { const s = localStorage.getItem(LANG_KEY); if (s === 'en' || s === 'tl') return s; } catch (e) { /* ignore */ }
+  return 'tl';
+}
+
+/* --------------------------------------------------------------- geometry */
+function maskHit(r, a, x, y, tol) {
+  const u = (x - r.x) / r.w, v = (y - r.y) / r.h;
+  if (u < 0 || u >= 1 || v < 0 || v >= 1) return false;
+  const W = a.mask.w, H = a.mask.h, c = (u * W) | 0, rr = (v * H) | 0, d = a.mask.d;
+  if (d[rr * W + c]) return true;
+  if (tol) for (let j = -tol; j <= tol; j++) for (let i = -tol; i <= tol; i++) {
+    const cc = c + i, r2 = rr + j; if (cc >= 0 && cc < W && r2 >= 0 && r2 < H && d[r2 * W + cc]) return true;
+  }
+  return false;
+}
+/* where a chain hanging straight down at x leaves the bottom edge of item r/a */
+function bottomAt(r, a, x) {
+  const W = a.mask.w; let c = Math.floor((x - r.x) / r.w * W);
+  let exact = c >= 0 && c < W && a.lowOk[c] === 1;
+  if (!exact) {
+    let best = -1, bd = 1e9; const cc = clamp(c, 0, W - 1);
+    for (let i = 0; i < W; i++) if (a.lowOk[i]) { const dd = Math.abs(i - cc); if (dd < bd) { bd = dd; best = i; } }
+    if (best < 0) best = clamp(cc, 0, W - 1);
+    c = best;
+  }
+  const ax = exact ? x : r.x + (c + 0.5) / W * r.w;
+  const bv = a.edge.bot[c] >= 0 ? a.edge.bot[c] : a.maxBot;
+  return { ax, ay: r.y + bv * r.h - INSET, exact };
+}
+function segBlocked(ax, ay, bx, by, ignore) {
+  const len = Math.hypot(bx - ax, by - ay); if (len < 0.8) return false;
+  const n = Math.ceil(len / 0.2);
+  for (let i = 1; i < n; i++) {
+    const t = i / n, x = ax + (bx - ax) * t, y = ay + (by - ay) * t;
+    if (Math.hypot(x - ax, y - ay) < 0.35 || Math.hypot(x - bx, y - by) < 0.35) continue;
+    for (const o of S.members) { if (ignore.includes(o)) continue; if (maskHit(rectOf(o), o.asset, x, y, 0)) return true; }
+  }
+  return false;
+}
+function makeLink(m, pid, t) {
+  let r, a, owner = null;
+  if (pid === 'board') { if (!S.board) return null; r = boardRect(); a = S.board.asset; }
+  else { owner = S.members.find(o => o.id === pid); if (!owner || owner === m) return null; r = rectOf(owner); a = owner.asset; }
+  const at = bottomAt(r, a, t.x), len = t.y - at.ay;
+  return { pid, ax: at.ax, ay: at.ay, exact: at.exact, len, blocked: segBlocked(at.ax, at.ay, t.x, t.y, [m, owner]) };
+}
+/* every figure hangs from the nearest thing above it (or from what the user chose) */
+function computeLinks() {
+  const L = [], kids = new Map();
+  const ms = S.members.slice().sort((a, b) => a.y - b.y);
+  for (const m of ms) {
+    const t = topAnchor(m); let c = null;
+    if (m.parent && m.parent !== 'auto') c = makeLink(m, m.parent, t);
+    if (!c) {
+      let bs = 1e9;
+      for (const pid of ['board'].concat(S.members.filter(o => o !== m).map(o => o.id))) {
+        const k = makeLink(m, pid, t); if (!k || k.len < MINCHAIN) continue;
+        const sc = k.len + (k.exact ? 0 : 60) + (k.blocked ? 240 : 0) + ((kids.get(pid) || 0) >= S.set.maxKids ? 120 : 0);
+        if (sc < bs) { bs = sc; c = k; }
+      }
+    }
+    if (c) { kids.set(c.pid, (kids.get(c.pid) || 0) + 1); L.push(Object.assign({ child: m, bx: t.x, by: t.y }, c)); }
+  }
+  S.links = L; S.linksDirty = false;
+}
+function segsCross(p1, p2, p3, p4) {
+  const d = (a, b, c) => (c.x - a.x) * (b.y - a.y) - (b.x - a.x) * (c.y - a.y);
+  const d1 = d(p3, p4, p1), d2 = d(p3, p4, p2), d3 = d(p1, p2, p3), d4 = d(p1, p2, p4);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+}
+function overlapAmount(A, B) {
+  const ra = rectOf(A), rb = rectOf(B);
+  const x0 = Math.max(ra.x, rb.x), x1 = Math.min(ra.x + ra.w, rb.x + rb.w), y0 = Math.max(ra.y, rb.y), y1 = Math.min(ra.y + ra.h, rb.y + rb.h);
+  if (x1 <= x0 || y1 <= y0) return 0;
+  let n = 0;
+  for (let y = y0; y < y1; y += 0.15) for (let x = x0; x < x1; x += 0.15) if (maskHit(ra, A.asset, x, y, 0) && maskHit(rb, B.asset, x, y, 0)) n++;
+  return n * 0.0225;
+}
+function computeChecks() {
+  if (S.linksDirty) computeLinks();
+  const out = [], name = m => m.name || tr('member');
+  const ms = S.members;
+  if (!S.board) out.push({ lvl: 'err', msg: tr('isNoBoard'), ids: [] });
+  for (let i = 0; i < ms.length; i++) for (let j = i + 1; j < ms.length; j++) {
+    const o = overlapAmount(ms[i], ms[j]);
+    if (o > 0.25) out.push({ lvl: 'err', msg: tr('isOverlap', { a: name(ms[i]), b: name(ms[j]) }), ids: [ms[i].id, ms[j].id] });
+  }
+  if (S.board) {
+    const br = boardRect();
+    for (const m of ms) {
+      const r = rectOf(m); if (r.y > br.y + br.h || r.x > br.w || r.x + r.w < 0) continue;
+      let hit = 0; for (let y = Math.max(r.y, 0); y < Math.min(r.y + r.h, br.h); y += 0.3) for (let x = Math.max(r.x, 0); x < Math.min(r.x + r.w, br.w); x += 0.3) if (maskHit(r, m.asset, x, y, 0) && maskHit(br, S.board.asset, x, y, 0)) hit++;
+      if (hit > 3) out.push({ lvl: 'err', msg: tr('isHitsBoard', { a: name(m) }), ids: [m.id] });
+    }
+  }
+  const byChild = new Map(S.links.map(l => [l.child.id, l]));
+  const kidCount = new Map();
+  for (const m of ms) {
+    const l = byChild.get(m.id);
+    if (!l) { out.push({ lvl: 'err', msg: tr('isNoAnchor', { a: name(m) }), ids: [m.id] }); continue; }
+    kidCount.set(l.pid, (kidCount.get(l.pid) || 0) + 1);
+    const pn = l.pid === 'board' ? tr('card') : name(ms.find(o => o.id === l.pid));
+    if (l.len < 0) out.push({ lvl: 'err', msg: tr('isAbove', { a: name(m), p: pn }), ids: [m.id] });
+    else if (l.blocked) out.push({ lvl: 'err', msg: tr('isBlocked', { a: name(m) }), ids: [m.id] });
+    else if (l.len < 1) out.push({ lvl: 'warn', msg: tr('isShort', { a: name(m), len: fmt(l.len) }), ids: [m.id] });
+    else if (l.len > 18) out.push({ lvl: 'warn', msg: tr('isLong', { a: name(m), len: fmt(l.len) }), ids: [m.id] });
+    if (!l.exact || Math.abs(l.ax - l.bx) > 0.2) out.push({ lvl: 'info', msg: tr('isSlant', { a: name(m) }), ids: [m.id] });
+  }
+  for (const [pid, n] of kidCount) if (pid !== 'board' && n > S.set.maxKids) { const p = ms.find(o => o.id === pid); out.push({ lvl: 'warn', msg: tr('isMaxKids', { n, a: name(p), max: S.set.maxKids }), ids: [pid] }); }
+  for (let i = 0; i < S.links.length; i++) for (let j = i + 1; j < S.links.length; j++) {
+    const a = S.links[i], b = S.links[j];
+    if (segsCross({ x: a.ax, y: a.ay }, { x: a.bx, y: a.by }, { x: b.ax, y: b.ay }, { x: b.bx, y: b.by })) out.push({ lvl: 'err', msg: tr('isCross', { a: name(a.child), b: name(b.child) }), ids: [a.child.id, b.child.id] });
+  }
+  const emp = ms.filter(m => m.asset.ph); if (emp.length) out.push({ lvl: 'info', msg: tr('isEmptySlots', { n: emp.length }), ids: emp.map(m => m.id) });
+  if (S.set.fit && ms.length && S.set.fitF < 0.5) out.push({ lvl: 'warn', msg: tr('isTight', { h: fmt(S.set.figH * S.set.fitF) }), ids: [] });
+  S.issues = out;
+}
+
+/* ---------------------------------------------------------------- drawing */
+function shadowOn(ctx, k, c) { ctx.shadowColor = c || 'rgba(35,25,15,.34)'; ctx.shadowBlur = 0.42 * k; ctx.shadowOffsetX = 0.1 * k; ctx.shadowOffsetY = 0.2 * k; }
+function shadowOff(ctx) { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; }
+function drawChain(ctx, ax, ay, bx, by) {
+  const len = Math.hypot(bx - ax, by - ay); if (len < 0.05) return;
+  const n = Math.max(1, Math.round(len / 0.27));
+  ctx.fillStyle = '#d4d8de'; ctx.strokeStyle = '#7f8691'; ctx.lineWidth = 0.035;
+  for (let i = 0; i <= n; i++) { const t = i / n; ctx.beginPath(); ctx.arc(ax + (bx - ax) * t, ay + (by - ay) * t, 0.1, 0, 6.2832); ctx.fill(); ctx.stroke(); }
+}
+function drawRing(ctx, x, y) {
+  ctx.beginPath(); ctx.arc(x, y, 0.21, 0, 6.2832); ctx.fillStyle = '#f2f4f7'; ctx.fill();
+  ctx.lineWidth = 0.07; ctx.strokeStyle = '#8b929c'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y, 0.09, 0, 6.2832); ctx.fillStyle = '#5d636d'; ctx.fill();
+}
+/* o: {k: device px per cm, ox, oy: device px origin, dpr, names, ghost} */
+function drawScene(ctx, o) {
+  const k = o.k;
+  if (S.linksDirty) computeLinks();
+  ctx.setTransform(k, 0, 0, k, o.ox, o.oy);
+  if (S.board) {
+    const br = boardRect(); shadowOn(ctx, k); ctx.drawImage(S.board.asset.canvas, 0, 0, br.w, br.h); shadowOff(ctx);
+  }
+  if (o.ghost && S.base) {
+    ctx.save(); ctx.globalAlpha = 0.3;
+    for (const m of S.members) { const b = S.base.m[m.id]; if (b) ctx.drawImage(m.asset.canvas, b.x, b.y, b.h * m.asset.w / m.asset.h, b.h); }
+    ctx.restore();
+  }
+  for (const l of S.links) drawChain(ctx, l.ax, l.ay, l.bx, l.by);
+  for (const m of S.members) { shadowOn(ctx, k); ctx.drawImage(m.asset.canvas, m.x, m.y, mw(m), m.h); }
+  shadowOff(ctx);
+  for (const l of S.links) { drawRing(ctx, l.ax, l.ay); drawRing(ctx, l.bx, l.by); }
+  if (o.names) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const fs = clamp(0.5 * k, 10 * o.dpr, 22 * o.dpr);
+    ctx.font = `600 ${fs}px "Figtree", system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const m of S.members) {
+      if (!m.name) continue;
+      const r = rectOf(m), x = o.ox + (r.x + r.w / 2) * k, y = o.oy + (r.y + r.h) * k + fs * 0.95;
+      const w = ctx.measureText(m.name).width + fs * 0.9;
+      ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.beginPath(); ctx.roundRect(x - w / 2, y - fs * 0.62, w, fs * 1.24, fs * 0.6); ctx.fill();
+      ctx.fillStyle = '#26304a'; ctx.fillText(m.name, x, y + 1);
+    }
+  }
+}
+function sceneBounds() {
+  const br = boardRect(); let x0 = 0, y0 = 0, x1 = br.w, y1 = S.board ? br.h : 0;
+  for (const m of S.members) { const r = rectOf(m); x0 = Math.min(x0, r.x); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h + 1.2); }
+  if (!S.board && !S.members.length) { x1 = 30; y1 = 30; }
+  return { x0, y0, x1, y1 };
+}
+function hangSize() {
+  const b = sceneBounds(), br = boardRect();
+  let y1 = S.board ? br.h : 0, x0 = 0, x1 = S.board ? br.w : 0;
+  for (const m of S.members) { const r = rectOf(m); y1 = Math.max(y1, r.y + r.h); x0 = Math.min(x0, r.x); x1 = Math.max(x1, r.x + r.w); }
+  return { w: x1 - x0, h: y1 };
+}
+
+/* ---------------------------------------------------------- auto layouts */
+function sizeOptions(n) {
+  const opts = [], seen = new Set();
+  const add = a => { if (a.some(v => v < 1 || v > 8)) return; if (a.length > 1 && Math.min(...a) < 2 && !(n <= 3 && a.length === 2)) return; const k = a.join('+'); if (a.reduce((s, v) => s + v, 0) === n && !seen.has(k)) { seen.add(k); opts.push(a); } };
+  for (let k = 1; k <= 5; k++) {
+    if (k > n) break;
+    const base = Math.floor(n / k), extra = n % k;
+    if (!extra) { add(Array(k).fill(base)); continue; }
+    const top = Array(k).fill(base).map((v, i) => i < extra ? v + 1 : v); add(top);
+    const bottom = Array(k).fill(base).map((v, i) => i >= k - extra ? v + 1 : v); add(bottom);
+    if (k >= 3) {
+      const order = [...Array(k).keys()].sort((a, b) => Math.abs(a - (k - 1) / 2) - Math.abs(b - (k - 1) / 2));
+      const mid = Array(k).fill(base); order.slice(0, extra).forEach(i => mid[i]++); add(mid);
+    }
+  }
+  for (let k = 2; k <= 5; k++) for (let s = k; s <= 8; s++) {   // tapering rows such as 4+3+2
+    const a = Array.from({ length: k }, (_, i) => s - i); if (a[k - 1] >= 1 && a.reduce((t, v) => t + v, 0) === n) add(a);
+  }
+  return opts.sort((a, b) => a.length - b.length);
+}
+function defaultSizes(n) {
+  if (n <= 0) return [];
+  const o = sizeOptions(n);
+  return o.find(a => Math.max(...a) <= 5) || o[0] || [n];
+}
+function currentRows() {
+  const n = S.members.length;
+  if (S.set.lmode === 'gen') {
+    const gens = [...new Set(S.members.map(m => m.gen))].sort((a, b) => a - b);
+    return gens.map(g => S.members.filter(m => m.gen === g));
+  }
+  let sizes = S.rowSizes;
+  if (!sizes || sizes.reduce((s, v) => s + v, 0) !== n) sizes = defaultSizes(n);
+  let i = 0; return sizes.map(s => S.members.slice(i, i += s));
+}
+function chooseCols(k, C, prev) {
+  if (C > 12) return null;
+  if (k === C) return [...Array(C).keys()];
+  let best = null, bs = -1e9; const mid = (C - 1) / 2;
+  for (let mask = 1; mask < (1 << C); mask++) {
+    const cols = []; for (let c = 0; c < C; c++) if (mask >> c & 1) cols.push(c);
+    if (cols.length !== k) continue;
+    if (!cols.every(c => mask >> (C - 1 - c) & 1)) continue;          // must mirror left/right
+    let sc = 0; if (prev && cols.every(c => prev.includes(c))) sc += 1000;
+    sc += cols.reduce((s, c) => s + Math.abs(c - mid), 0);
+    if (sc > bs) { bs = sc; best = cols; }
+  }
+  return best;
+}
+function fitFactor(widthFor) {
+  const limit = boardRect().w * 0.96; let f = 1;
+  if (!S.set.fit) return 1;
+  while (f > 0.35 && widthFor(f) > limit) f -= 0.02;
+  return Math.round(f * 100) / 100;
+}
+function layoutRows() {
+  const rows = currentRows().filter(r => r.length); if (!rows.length) return;
+  const gap = S.set.gap, chain = S.set.chain, bw = boardRect().w, C = Math.max(...rows.map(r => r.length));
+  const place = S.set.place;
+  const widthFor = f => {
+    const maxW = Math.max(...S.members.map(m => S.set.figH * m.sz * f * m.asset.w / m.asset.h));
+    return (C - 1) * (maxW + gap) + maxW;
+  };
+  S.set.fitF = fitFactor(widthFor); applyHeights();
+  const maxW = Math.max(...S.members.map(mw)), pitch = maxW + gap, cxb = bw / 2;
+  let anchorY = boardLowest() + chain, prev = null;
+  for (const row of rows) {
+    const k = row.length; let cols = null, txs;
+    if (place === 'grid') cols = chooseCols(k, C, prev);
+    else if (place === 'left') cols = [...Array(k).keys()];
+    else if (place === 'right') cols = Array.from({ length: k }, (_, i) => C - k + i);
+    if (cols) { txs = cols.map(c => cxb + (c - (C - 1) / 2) * pitch); prev = cols; }
+    else { txs = row.map((_, j) => cxb + (j - (k - 1) / 2) * pitch); prev = null; }   // centred on the same column pitch, so odd/even rows sit between the ones above
+    row.forEach((m, i) => { m.x = txs[i] - m.asset.topFx * mw(m); m.y = anchorY - m.asset.topFy * m.h - INSET; m.parent = 'auto'; });
+    anchorY = Math.max(...row.map(lowestY)) + chain;
+  }
+  straighten();
+}
+function straighten() {          // nudge each figure so its hole is right under the hole it hangs from
+  for (const m of S.members.slice().sort((a, b) => a.y - b.y)) {
+    S.linksDirty = true; computeLinks();
+    const l = S.links.find(k => k.child === m), dx = l ? l.ax - l.bx : 0;
+    if (Math.abs(dx) > 0.02 && Math.abs(dx) < 0.9) { m.x += dx; if (S.members.some(o => o !== m && overlapAmount(m, o) > 0.05)) m.x -= dx; }
+  }
+  S.linksDirty = true;
+}
+function layoutTree() {
+  const ms = S.members; if (!ms.length) return;
+  const byId = new Map(ms.map(m => [m.id, m]));
+  const parentOf = m => (m.parent && m.parent !== 'auto' && m.parent !== 'board' && m.parent !== m.id && byId.has(m.parent)) ? byId.get(m.parent) : null;
+  for (const m of ms) {                       // break accidental loops
+    const seen = new Set([m.id]); let cur = parentOf(m);
+    while (cur) { if (seen.has(cur.id)) { m.parent = 'auto'; break; } seen.add(cur.id); cur = parentOf(cur); }
+  }
+  const kids = new Map(ms.map(m => [m.id, []])), roots = [];
+  for (const m of ms) { const p = parentOf(m); if (p) kids.get(p.id).push(m); else roots.push(m); }
+  const gap = S.set.gap, chain = S.set.chain, bw = boardRect().w;
+  const wf = (m, f) => S.set.figH * m.sz * f * m.asset.w / m.asset.h;
+  const subW = (m, f) => { const ks = kids.get(m.id); if (!ks.length) return wf(m, f); return Math.max(wf(m, f), ks.reduce((t, c) => t + subW(c, f), 0) + gap * (ks.length - 1)); };
+  const total = f => roots.reduce((t, r) => t + subW(r, f), 0) + gap * (roots.length - 1);
+  S.set.fitF = fitFactor(total); applyHeights();
+  const f = S.set.fitF, depthOf = new Map(), tx = new Map();
+  const put = (m, left, d) => {
+    const ks = kids.get(m.id), bwid = subW(m, f); depthOf.set(m.id, d);
+    const childW = ks.reduce((t, c) => t + subW(c, f), 0) + gap * Math.max(0, ks.length - 1);
+    let x = left + (bwid - childW) / 2; ks.forEach(c => { put(c, x, d + 1); x += subW(c, f) + gap; });
+    tx.set(m.id, left + bwid / 2);
+  };
+  let left = bw / 2 - total(f) / 2; roots.forEach(r => { put(r, left, 0); left += subW(r, f) + gap; });
+  const maxD = Math.max(...depthOf.values()); let anchorY = boardLowest() + chain;
+  for (let d = 0; d <= maxD; d++) {
+    const row = ms.filter(m => depthOf.get(m.id) === d);
+    row.forEach(m => { m.x = tx.get(m.id) - m.asset.topFx * mw(m); m.y = anchorY - m.asset.topFy * m.h - INSET; });
+    if (row.length) anchorY = Math.max(...row.map(lowestY)) + chain;
+  }
+  for (const m of roots) m.parent = 'auto';
+  straighten();
+}
+function guessTree() {
+  const gens = [...new Set(S.members.map(m => m.gen))].sort((a, b) => a - b);
+  for (let gi = 0; gi < gens.length; gi++) {
+    const row = S.members.filter(m => m.gen === gens[gi]);
+    if (gi === 0) { row.forEach(m => m.parent = 'auto'); continue; }
+    const ups = S.members.filter(m => m.gen === gens[gi - 1]);
+    row.forEach((m, i) => { m.parent = ups[Math.min(ups.length - 1, Math.floor(i * ups.length / row.length))].id; });
+  }
+}
+function autoLayout() {
+  if (!S.members.length) return;
+  if (S.set.lmode === 'tree') layoutTree(); else layoutRows();
+  S.manual = false; commit(); fitView();
+}
+
+/* -------------------------------------------------------- align commands */
+const selMembers = () => S.members.filter(m => S.sel.has(m.id));
+function alignSel(kind) {
+  const ms = selMembers(); if (!ms.length) return;
+  const rs = ms.map(m => [m, rectOf(m)]);
+  const x0 = Math.min(...rs.map(([, r]) => r.x)), x1 = Math.max(...rs.map(([, r]) => r.x + r.w));
+  const y0 = Math.min(...rs.map(([, r]) => r.y)), y1 = Math.max(...rs.map(([, r]) => r.y + r.h));
+  if (kind === 'cardc') { const dx = boardRect().w / 2 - (x0 + x1) / 2; ms.forEach(m => m.x += dx); }
+  else if (ms.length > 1) {
+    if (kind === 'l') rs.forEach(([m]) => m.x = x0);
+    if (kind === 'c') rs.forEach(([m, r]) => m.x = (x0 + x1) / 2 - r.w / 2);
+    if (kind === 'r') rs.forEach(([m, r]) => m.x = x1 - r.w);
+    if (kind === 't') rs.forEach(([m]) => m.y = y0);
+    if (kind === 'm') rs.forEach(([m, r]) => m.y = (y0 + y1) / 2 - r.h / 2);
+    if (kind === 'b') rs.forEach(([m, r]) => m.y = y1 - r.h);
+    if (kind === 'dh' && ms.length > 2) {
+      const s = rs.slice().sort((a, b) => a[1].x - b[1].x), tw = s.reduce((t, [, r]) => t + r.w, 0), g = (x1 - x0 - tw) / (s.length - 1); let x = x0;
+      s.forEach(([m, r]) => { m.x = x; x += r.w + g; });
+    }
+    if (kind === 'dv' && ms.length > 2) {
+      const s = rs.slice().sort((a, b) => a[1].y - b[1].y), th = s.reduce((t, [, r]) => t + r.h, 0), g = (y1 - y0 - th) / (s.length - 1); let y = y0;
+      s.forEach(([m, r]) => { m.y = y; y += r.h + g; });
+    }
+    if (kind === 'swap' && ms.length === 2) {
+      const [a, b] = ms, ta = topAnchor(a), tb = topAnchor(b);
+      a.x += tb.x - ta.x; a.y += tb.y - ta.y; b.x += ta.x - tb.x; b.y += ta.y - tb.y;
+    }
+  }
+  S.manual = true; commit();
+}
+function hangStraight(m) {            // put the figure straight under the hole it hangs from
+  if (S.linksDirty) computeLinks();
+  const l = S.links.find(k => k.child === m); if (!l) return;
+  m.x += l.ax - l.bx; S.manual = true; commit();
+}
+
+/* ------------------------------------------------------------ stage view */
+let cv, cx, VW = 0, VH = 0, dpr = 1, raf = 0, COL = { stage: '#e8ebf1', dot: '#c3c9d6', acc: '#2f56c4', err: '#d0343f', warn: '#d98a12' };
+function requestRender() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; renderStage(); }); }
+function resizeStage() {
+  const r = cv.parentElement.getBoundingClientRect(); dpr = window.devicePixelRatio || 1; VW = r.width; VH = r.height;
+  cv.width = Math.max(1, Math.round(VW * dpr)); cv.height = Math.max(1, Math.round(VH * dpr)); cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
+  requestRender();
+}
+const toWorld = (px, py) => ({ x: (px - S.view.ox) / S.view.z, y: (py - S.view.oy) / S.view.z });
+function fitView() {
+  if (!VW) return;
+  const b = sceneBounds(), pad = 1.2, bw = b.x1 - b.x0 + pad * 2, bh = b.y1 - b.y0 + pad * 2;
+  const top = 54, bot = 52, z = clamp(Math.min((VW - 24) / bw, (VH - top - bot) / bh), 2, 90);
+  S.view.moved = false; S.view.z = z; S.view.ox = (VW - (b.x1 - b.x0) * z) / 2 - b.x0 * z; S.view.oy = top + (VH - top - bot - (b.y1 - b.y0) * z) / 2 - b.y0 * z;
+  requestRender(); const l = $('#zoomLbl'); if (l) l.textContent = Math.round(z / 18 * 100) + '%';
+}
+function zoomAt(px, py, f) {
+  const w = toWorld(px, py), z = clamp(S.view.z * f, 2, 120);
+  S.view.moved = true; S.view.z = z; S.view.ox = px - w.x * z; S.view.oy = py - w.y * z;
+  requestRender(); const l = $('#zoomLbl'); if (l) l.textContent = Math.round(z / 18 * 100) + '%';
+}
+let GUIDES = [], MARQ = null;
+function renderStage() {
+  if (!cx) return;
+  const ctx = cx, z = S.view.z;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = COL.stage; ctx.fillRect(0, 0, cv.width, cv.height);
+  const step = z >= 9 ? z : z * 5; ctx.fillStyle = COL.dot;
+  for (let x = ((S.view.ox % step) + step) % step; x < VW; x += step) for (let y = ((S.view.oy % step) + step) % step; y < VH; y += step) ctx.fillRect(Math.round(x * dpr), Math.round(y * dpr), Math.max(1, dpr), Math.max(1, dpr));
+  drawScene(ctx, { k: z * dpr, ox: S.view.ox * dpr, oy: S.view.oy * dpr, dpr, names: S.set.names, ghost: S.ghost && !!S.base });
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const sx = x => S.view.ox + x * z, sy = y => S.view.oy + y * z;
+  const bad = new Map(); for (const i of S.issues) if (i.lvl !== 'info') for (const id of i.ids) bad.set(id, i.lvl === 'err' ? COL.err : (bad.get(id) || COL.warn));
+  for (const m of S.members) {
+    const r = rectOf(m), selected = S.sel.has(m.id), c = bad.get(m.id);
+    if (!selected && !c) continue;
+    ctx.setLineDash(selected ? [] : [5, 4]); ctx.lineWidth = selected ? 2 : 1.5; ctx.strokeStyle = selected ? COL.acc : c;
+    ctx.strokeRect(sx(r.x) - 3, sy(r.y) - 3, r.w * z + 6, r.h * z + 6);
+    if (selected) { ctx.fillStyle = 'rgba(47,86,196,.07)'; ctx.fillRect(sx(r.x) - 3, sy(r.y) - 3, r.w * z + 6, r.h * z + 6); }
+  }
+  ctx.setLineDash([]);
+  ctx.lineWidth = 1; ctx.strokeStyle = '#d6226f';
+  for (const g of GUIDES) { ctx.beginPath(); if (g.t === 'v') { ctx.moveTo(sx(g.v) + .5, 0); ctx.lineTo(sx(g.v) + .5, VH); } else { ctx.moveTo(0, sy(g.v) + .5); ctx.lineTo(VW, sy(g.v) + .5); } ctx.stroke(); }
+  if (MARQ) { ctx.setLineDash([4, 3]); ctx.strokeStyle = COL.acc; ctx.fillStyle = 'rgba(47,86,196,.08)'; const r = MARQ; ctx.fillRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0); ctx.strokeRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0); ctx.setLineDash([]); }
+  if (!S.board && !S.members.length) {
+    ctx.fillStyle = '#6b7488'; ctx.font = '600 15px Figtree, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(tr('emptyStage'), VW / 2, VH / 2);
+  } else if (S.board && !S.members.length) {
+    ctx.fillStyle = '#6b7488'; ctx.font = '600 15px Figtree, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(tr('emptyMembers'), VW / 2, S.view.oy + (boardRect().h) * z + 36);
+  }
+}
+
+/* ------------------------------------------------------------ pointer UI */
+const P = { ptrs: new Map(), drag: null, pan: null, marq: null, pinch: null, space: false };
+function pickAt(wx, wy) {
+  for (let i = S.members.length - 1; i >= 0; i--) { const m = S.members[i]; if (maskHit(rectOf(m), m.asset, wx, wy, 2)) return m; }
+  return null;
+}
+function snapDrag(dx, dy, orig) {
+  const sel = selMembers(), z = S.view.z, th = 7 / z;
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const m of sel) { const o = orig.get(m.id); x0 = Math.min(x0, o.x + dx); y0 = Math.min(y0, o.y + dy); x1 = Math.max(x1, o.x + dx + mw(m)); y1 = Math.max(y1, o.y + dy + m.h); }
+  const xsD = [x0, (x0 + x1) / 2, x1], ysD = [y0, (y0 + y1) / 2, y1], single = sel.length === 1;
+  let chainD = null;
+  if (single) { const m = sel[0], o = orig.get(m.id); xsD.push(o.x + dx + m.asset.topFx * mw(m), o.x + dx + m.asset.botFx * mw(m)); chainD = o.y + dy + m.asset.topFy * m.h + INSET; }
+  const br = boardRect(), xt = [0, br.w / 2, br.w], yt = [], ct = [];
+  if (S.board) ct.push(boardLowest() + S.set.chain);
+  for (const o of S.members) {
+    if (S.sel.has(o.id)) continue; const r = rectOf(o);
+    xt.push(r.x, r.x + r.w / 2, r.x + r.w, topAnchor(o).x, botAnchorX(o)); yt.push(r.y, r.y + r.h / 2, r.y + r.h); ct.push(lowestY(o) + S.set.chain);
+  }
+  let bx = null, by = null;
+  for (const a of xsD) for (const t of xt) { const d = t - a; if (Math.abs(d) < th && (!bx || Math.abs(d) < Math.abs(bx.d))) bx = { d, v: t }; }
+  for (const a of ysD) for (const t of yt) { const d = t - a; if (Math.abs(d) < th && (!by || Math.abs(d) < Math.abs(by.d))) by = { d, v: t }; }
+  if (chainD != null) for (const t of ct) { const d = t - chainD; if (Math.abs(d) < th && (!by || Math.abs(d) < Math.abs(by.d))) by = { d, v: t - 0 , chain: true }; }
+  const g = [];
+  if (bx) { dx += bx.d; g.push({ t: 'v', v: bx.v }); }
+  if (by) { dy += by.d; if (!by.chain) g.push({ t: 'h', v: by.v }); }
+  return { dx, dy, g };
+}
+function initPointer() {
+  const pos = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  cv.addEventListener('pointerdown', e => {
+    cv.setPointerCapture(e.pointerId); const p = pos(e); P.ptrs.set(e.pointerId, p);
+    if (P.ptrs.size === 2) { const [a, b] = [...P.ptrs.values()]; P.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: S.view.z }; P.drag = P.pan = P.marq = null; MARQ = null; GUIDES = []; return; }
+    const w = toWorld(p.x, p.y), hit = (e.button === 1 || P.space) ? null : pickAt(w.x, w.y);
+    if (hit) {
+      let toggle = null;
+      if (!S.sel.has(hit.id)) { if (!e.shiftKey) S.sel.clear(); S.sel.add(hit.id); } else if (e.shiftKey) toggle = hit.id;
+      syncSel();
+      P.drag = { s: p, w, moved: false, toggle, orig: new Map(selMembers().map(m => [m.id, { x: m.x, y: m.y }])) };
+    } else if (e.shiftKey && e.button === 0) { P.marq = { x0: p.x, y0: p.y }; MARQ = { x0: p.x, y0: p.y, x1: p.x, y1: p.y }; }
+    else P.pan = { s: p, ox: S.view.ox, oy: S.view.oy, moved: false };
+    requestRender();
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!P.ptrs.has(e.pointerId)) { const p = pos(e); const w = toWorld(p.x, p.y); cv.style.cursor = P.space ? 'grab' : pickAt(w.x, w.y) ? 'move' : 'default'; return; }
+    const p = pos(e); P.ptrs.set(e.pointerId, p);
+    if (P.pinch && P.ptrs.size === 2) {
+      const [a, b] = [...P.ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), cxp = (a.x + b.x) / 2, cyp = (a.y + b.y) / 2;
+      const target = clamp(P.pinch.z * d / P.pinch.d, 2, 120); zoomAt(cxp, cyp, target / S.view.z); return;
+    }
+    if (P.drag) {
+      if (!P.drag.moved && Math.hypot(p.x - P.drag.s.x, p.y - P.drag.s.y) < 3) return;
+      P.drag.moved = true;
+      const w = toWorld(p.x, p.y); let dx = w.x - P.drag.w.x, dy = w.y - P.drag.w.y;
+      if (S.set.guides && !e.altKey) { const r = snapDrag(dx, dy, P.drag.orig); dx = r.dx; dy = r.dy; GUIDES = r.g; } else GUIDES = [];
+      for (const m of selMembers()) { const o = P.drag.orig.get(m.id); m.x = o.x + dx; m.y = o.y + dy; }
+      S.linksDirty = true; scheduleChecks(); updatePosFields(); requestRender();
+    } else if (P.pan) {
+      const dx = p.x - P.pan.s.x, dy = p.y - P.pan.s.y; if (Math.hypot(dx, dy) > 3) P.pan.moved = true;
+      S.view.moved = true; S.view.ox = P.pan.ox + dx; S.view.oy = P.pan.oy + dy; requestRender();
+    } else if (P.marq) {
+      MARQ = { x0: P.marq.x0, y0: P.marq.y0, x1: p.x, y1: p.y }; requestRender();
+    }
+  });
+  const up = e => {
+    if (!P.ptrs.has(e.pointerId)) return; P.ptrs.delete(e.pointerId);
+    if (P.pinch) { if (P.ptrs.size < 2) P.pinch = null; return; }
+    if (P.drag) {
+      if (P.drag.moved) { S.manual = true; commit(); } else if (P.drag.toggle) { S.sel.delete(P.drag.toggle); syncSel(); }
+      P.drag = null; GUIDES = [];
+    } else if (P.pan) {
+      if (!P.pan.moved && S.sel.size) { S.sel.clear(); syncSel(); } P.pan = null;
+    } else if (P.marq && MARQ) {
+      const a = toWorld(Math.min(MARQ.x0, MARQ.x1), Math.min(MARQ.y0, MARQ.y1)), b = toWorld(Math.max(MARQ.x0, MARQ.x1), Math.max(MARQ.y0, MARQ.y1));
+      S.sel.clear(); for (const m of S.members) { const r = rectOf(m); if (r.x < b.x && r.x + r.w > a.x && r.y < b.y && r.y + r.h > a.y) S.sel.add(m.id); }
+      P.marq = null; MARQ = null; syncSel();
+    }
+    requestRender();
+  };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('wheel', e => { e.preventDefault(); const p = pos(e); zoomAt(p.x, p.y, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+  window.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase(); if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+    if (e.code === 'Space') { P.space = true; if (!e.repeat) e.preventDefault(); return; }
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+    if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); S.members.forEach(m => S.sel.add(m.id)); syncSel(); return; }
+    if (e.key === 'Escape') { S.sel.clear(); syncSel(); return; }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && S.mode === 'shop' && S.sel.size) { e.preventDefault(); removeMembers([...S.sel]); return; }
+    const st = e.shiftKey ? 1 : 0.1, arrows = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] };
+    if (arrows[e.key] && S.sel.size) { e.preventDefault(); selMembers().forEach(m => { m.x += arrows[e.key][0]; m.y += arrows[e.key][1]; }); S.linksDirty = true; clearTimeout(initPointer.t); requestRender(); updatePosFields(); initPointer.t = setTimeout(() => { S.manual = true; commit(); }, 350); }
+  });
+  window.addEventListener('keyup', e => { if (e.code === 'Space') P.space = false; });
+}
+
+/* ------------------------------------------------------------------ icons */
+const SV = (p, extra) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra || ''}>${p}</svg>`;
+const IC = {
+  undo: SV('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),
+  redo: SV('<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>'),
+  open: SV('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+  export: SV('<path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/>'),
+  send: SV('<path d="M21 3 10 14"/><path d="M21 3 14 21l-4-7-7-4z"/>'),
+  'al-l': SV('<path d="M4 3v18"/><rect x="8" y="6" width="12" height="4" rx="1"/><rect x="8" y="14" width="7" height="4" rx="1"/>'),
+  'al-c': SV('<path d="M12 3v18"/><rect x="5" y="6" width="14" height="4" rx="1"/><rect x="8" y="14" width="8" height="4" rx="1"/>'),
+  'al-r': SV('<path d="M20 3v18"/><rect x="4" y="6" width="12" height="4" rx="1"/><rect x="9" y="14" width="7" height="4" rx="1"/>'),
+  'al-t': SV('<path d="M3 4h18"/><rect x="6" y="8" width="4" height="12" rx="1"/><rect x="14" y="8" width="4" height="7" rx="1"/>'),
+  'al-m': SV('<path d="M3 12h18"/><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="8" width="4" height="8" rx="1"/>'),
+  'al-b': SV('<path d="M3 20h18"/><rect x="6" y="4" width="4" height="12" rx="1"/><rect x="14" y="9" width="4" height="7" rx="1"/>'),
+  'dist-h': SV('<path d="M4 3v18M20 3v18"/><rect x="9.5" y="7" width="5" height="10" rx="1"/>'),
+  'dist-v': SV('<path d="M3 4h18M3 20h18"/><rect x="7" y="9.5" width="10" height="5" rx="1"/>'),
+  swap: SV('<path d="m7 4-4 4 4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/>'),
+  center: SV('<path d="M12 2v20" stroke-dasharray="2 2.5"/><rect x="6" y="7" width="12" height="10" rx="2"/>'),
+  up: SV('<path d="m6 15 6-6 6 6"/>'), down: SV('<path d="m6 9 6 6 6-6"/>'),
+  install: SV('<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><rect x="3" y="17" width="18" height="4" rx="1.5"/>'),
+  camera: SV('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
+  upload: SV('<path d="M12 16V5"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/>'),
+  trash: SV('<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m6 7 1 13h10l1-13"/>')
+};
+function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, ms || 2800); }
+function openModal(title, html, mount) { $('#mTitle').textContent = title; $('#mBody').innerHTML = html; $('#modal').hidden = false; if (mount) mount($('#mBody')); }
+function closeModal() { $('#modal').hidden = true; }
+function thumb(a) {
+  if (a.thumb) return a.thumb;
+  const s = 96 / Math.max(a.w, a.h), c = mkCanvas(a.w * s, a.h * s); c.getContext('2d').drawImage(a.canvas, 0, 0, c.width, c.height);
+  return (a.thumb = c.toDataURL('image/png'));
+}
+
+/* ----------------------------------------------------- UI refresh plumbing */
+let chkTimer = 0;
+function scheduleChecks() { clearTimeout(chkTimer); chkTimer = setTimeout(() => { computeChecks(); renderChecks(); updateSpecs(); requestRender(); }, 140); }
+function changed(ui) {
+  S.linksDirty = true; if (ui) refreshUI(); scheduleChecks(); requestRender(); scheduleSave();
+}
+function refreshUI() {
+  renderMembers(); renderInspector(); updateLayoutPanel(); updateTools(); updateTop();
+  $('#demoPill').hidden = !isDemo();
+  $('#ghostWrap').hidden = !S.base; if (!S.base) { S.ghost = false; $('#chkGhost').checked = false; }
+  $('#btnRevert').disabled = !S.base;
+}
+function updateTop() { $('#btnUndo').disabled = Hist.idx <= 0; $('#btnRedo').disabled = Hist.idx >= Hist.stack.length - 1; }
+function syncSel() {
+  $$('#memList .mem').forEach(el => el.classList.toggle('sel', S.sel.has(el.dataset.id)));
+  renderInspector(); updateTools(); requestRender();
+}
+function updateTools() {
+  const n = S.sel.size, t = $('#tools'); t.hidden = n === 0;
+  $$('button', t).forEach(b => {
+    const k = b.dataset.al;
+    b.disabled = (['l', 'c', 'r', 't', 'm', 'b'].includes(k) && n < 2) || ((k === 'dh' || k === 'dv') && n < 3) || (k === 'swap' && n !== 2);
+  });
+}
+function updatePosFields() {
+  const ms = selMembers();
+  const px = $('#posInfo');
+  if (ms.length === 1) {
+    const m = ms[0]; px.textContent = `X ${fmt(m.x)} · Y ${fmt(m.y)} cm`;
+    for (const [id, v] of [['inX', m.x], ['inY', m.y]]) { const e = $('#' + id); if (e && document.activeElement !== e) e.value = fmt(v); }
+  } else px.textContent = ms.length > 1 ? tr('nSelected', { n: ms.length }) : '';
+}
+
+/* ------------------------------------------------------------ members list */
+function renderMembers() {
+  $('#memCount').textContent = S.members.length;
+  const genOpts = [1, 2, 3, 4, 5, 6].map(g => `<option value="${g}">${g}</option>`).join('');
+  $('#memList').innerHTML = S.members.map((m, i) => {
+    const po = `<option value="auto">${tr('parentAuto')}</option><option value="board">${tr('parentCard')}</option>` + S.members.filter(o => o !== m).map(o => `<option value="${o.id}">${esc(o.name || tr('member'))}</option>`).join('');
+    return `<div class="mem${S.sel.has(m.id) ? ' sel' : ''}" data-id="${m.id}">
+      <button type="button" class="th" data-a="img" title="${tr('memPic')}" aria-label="${tr('memPic')}"><img alt="" src="${thumb(m.asset)}"><span class="cam">${IC.camera}</span></button>
+      <input class="nm" data-f="name" list="nameList" value="${esc(m.name)}" aria-label="${tr('memberNameN', { n: i + 1 })}">
+      <div class="mb"><button type="button" data-a="up" title="${tr('memUp')}" aria-label="${tr('memUp')}"${i ? '' : ' disabled'}>${IC.up}</button><button type="button" data-a="down" title="${tr('memDown')}" aria-label="${tr('memDown')}"${i < S.members.length - 1 ? '' : ' disabled'}>${IC.down}</button><button type="button" class="shop-only" data-a="del" title="${tr('memDel')}" aria-label="${tr('memDel')}">${IC.trash}</button></div>
+      <div class="mm"><span>${tr('hangsFrom')}</span><select data-f="parent" aria-label="${tr('hangsFromAria')}">${po}</select><span>${tr('genShort')}</span><select class="g" data-f="gen" aria-label="${tr('genAria')}">${genOpts}</select></div>
+    </div>`;
+  }).join('') || `<p class="hint">${tr('noFigures')}</p>`;
+  $$('#memList .mem').forEach(el => {
+    const m = S.members.find(x => x.id === el.dataset.id);
+    el.querySelector('[data-f=parent]').value = (m.parent === 'auto' || m.parent === 'board' || S.members.some(o => o.id === m.parent)) ? m.parent : 'auto';
+    el.querySelector('[data-f=gen]').value = m.gen;
+  });
+}
+function removeMembers(ids) {
+  S.members = S.members.filter(m => !ids.includes(m.id));
+  for (const m of S.members) if (ids.includes(m.parent)) m.parent = 'auto';
+  ids.forEach(id => S.sel.delete(id)); commit();
+}
+function bindMembers() {
+  const L = $('#memList');
+  L.addEventListener('click', e => {
+    const row = e.target.closest('.mem'); if (!row) return; const id = row.dataset.id, i = S.members.findIndex(m => m.id === id), b = e.target.closest('button[data-a]');
+    if (b) {
+      const a = b.dataset.a;
+      if (a === 'img') pickMemberImage(id);
+      else if (a === 'del') removeMembers([id]);
+      else { const j = a === 'up' ? i - 1 : i + 1; if (j < 0 || j >= S.members.length) return; [S.members[i], S.members[j]] = [S.members[j], S.members[i]]; if (S.set.lmode !== 'tree') autoLayout(); else commit(); }
+      return;
+    }
+    if (e.target.closest('input,select')) return;
+    if (!e.shiftKey) S.sel.clear(); if (S.sel.has(id) && e.shiftKey) S.sel.delete(id); else S.sel.add(id); syncSel();
+  });
+  L.addEventListener('focusin', e => { const row = e.target.closest('.mem'); if (row && e.target.matches('input') && !S.sel.has(row.dataset.id)) { S.sel = new Set([row.dataset.id]); $$('#memList .mem').forEach(el => el.classList.toggle('sel', S.sel.has(el.dataset.id))); renderInspector(); updateTools(); requestRender(); } });
+  L.addEventListener('input', e => { const row = e.target.closest('.mem'); if (!row || !e.target.matches('[data-f=name]')) return; const m = S.members.find(x => x.id === row.dataset.id); m.name = e.target.value; requestRender(); const n = $('#inName'); if (n && S.sel.has(m.id) && document.activeElement !== n) n.value = m.name; });
+  L.addEventListener('change', e => {
+    const row = e.target.closest('.mem'); if (!row) return; const m = S.members.find(x => x.id === row.dataset.id), f = e.target.dataset.f;
+    if (f === 'name') commit();
+    else if (f === 'parent') { m.parent = e.target.value; if (S.set.lmode === 'tree' && m.parent !== 'auto') autoLayout(); else commit(); }
+    else if (f === 'gen') { m.gen = +e.target.value; if (S.set.lmode === 'gen') autoLayout(); else commit(); }
+  });
+}
+
+/* --------------------------------------------------------- layout panel UI */
+function updateLayoutPanel() {
+  const st = S.set, n = S.members.length;
+  $('#layBody').dataset.lm = st.lmode;
+  $$('#lmode button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lm === st.lmode)));
+  for (const k of ['gap', 'chain', 'figH', 'maxKids']) { const e = $('#' + k); if (document.activeElement !== e) e.value = st[k]; }
+  $('#fit').checked = st.fit; $('#place').value = st.place; syncCardFields(); syncCountFields();
+  $('#chkGuides').checked = st.guides; $('#chkNames').checked = st.names;
+  const cur = (S.rowSizes && S.rowSizes.reduce((a, b) => a + b, 0) === n ? S.rowSizes : defaultSizes(n));
+  const opts = sizeOptions(n);
+  $('#chips').innerHTML = n < 2 ? `<span class="hint">${tr('addFiguresFirst')}</span>` : opts.map(o => `<button type="button" class="chip" data-s="${o.join(',')}" aria-pressed="${o.join('+') === cur.join('+')}">${o.join(' + ')}</button>`).join('');
+  $('#chipLbl').textContent = tr('chipLblN', { n });
+  const rc = $('#rowCustom'); if (document.activeElement !== rc) rc.value = cur.join(',');
+}
+function bindLayout() {
+  $$('#lmode button').forEach(b => b.addEventListener('click', () => {
+    S.set.lmode = b.dataset.lm;
+    if (S.set.lmode === 'tree' && !S.members.some(m => m.parent !== 'auto' && m.parent !== 'board')) { commit(); toast(tr('toastTreeHelp'), 4200); }
+    else autoLayout();
+  }));
+  $('#chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.rowSizes = b.dataset.s.split(',').map(Number); S.set.lmode = 'rows'; autoLayout(); });
+  $('#rowCustom').addEventListener('change', e => {
+    const a = e.target.value.split(/[^0-9]+/).filter(Boolean).map(Number);
+    if (!a.length || a.some(v => v < 1 || v > 12)) { toast(tr('toastRowNums')); updateLayoutPanel(); return; }
+    if (a.reduce((s, v) => s + v, 0) !== S.members.length) { toast(tr('toastRowSum', { want: S.members.length, got: a.reduce((s, v) => s + v, 0) }), 3500); updateLayoutPanel(); return; }
+    S.rowSizes = a; S.set.lmode = 'rows'; autoLayout();
+  });
+  $('#place').addEventListener('change', e => { S.set.place = e.target.value; autoLayout(); });
+  for (const k of ['gap', 'chain', 'figH']) $('#' + k).addEventListener('change', e => { const v = parseFloat(e.target.value); if (!(v > 0)) { updateLayoutPanel(); return; } S.set[k] = v; autoLayout(); });
+  $('#fit').addEventListener('change', e => { S.set.fit = e.target.checked; autoLayout(); });
+  $('#maxKids').addEventListener('change', e => { S.set.maxKids = Math.max(1, parseInt(e.target.value) || 2); commit(); });
+  $('#btnLayout').addEventListener('click', autoLayout);
+  $('#btnGuess').addEventListener('click', () => { guessTree(); S.set.lmode = 'tree'; autoLayout(); });
+  $('#chkGuides').addEventListener('change', e => { S.set.guides = e.target.checked; });
+  $('#chkNames').addEventListener('change', e => { S.set.names = e.target.checked; requestRender(); });
+  $('#chkGhost').addEventListener('change', e => { S.ghost = e.target.checked; requestRender(); });
+}
+
+/* --------------------------------------------------- inspector / checks */
+function renderInspector() {
+  const el = $('#inspector'), ms = selMembers();
+  if (!ms.length) { el.innerHTML = `<p class="hint">${tr('inspEmpty')}</p>`; return; }
+  if (ms.length > 1) { el.innerHTML = `<div class="stat"><b>${tr('nSelected', { n: ms.length })}</b><span>${tr('inspMulti')}</span></div>`; return; }
+  const m = ms[0]; if (S.linksDirty) computeLinks();
+  const l = S.links.find(k => k.child === m), p = l && l.pid !== 'board' ? S.members.find(o => o.id === l.pid) : null;
+  el.innerHTML = `<label class="fld" for="inName">${tr('inspName')}<input id="inName" list="nameList" value="${esc(m.name)}"></label>
+    <div class="kv"><label class="fld" for="inH">${tr('inspHeight')}<input id="inH" type="number" step="0.5" min="2" max="40" value="${fmt(m.h)}"></label><span></span>
+    <label class="fld" for="inX">X (cm)<input id="inX" type="number" step="0.1" value="${fmt(m.x)}"></label>
+    <label class="fld" for="inY">Y (cm)<input id="inY" type="number" step="0.1" value="${fmt(m.y)}"></label></div>
+    <p class="hint">${l ? tr('inspHangs', { who: p ? esc(p.name) : tr('card'), len: fmt(l.len) }) : tr('inspNoParent')} ${tr('inspXY')}</p>
+    <button type="button" class="btn" data-act="straight">${tr('inspStraight')}</button>
+    <button type="button" class="btn" data-act="cardc">${tr('inspCenter')}</button>
+    <button type="button" class="btn" data-act="img">${tr('inspPic')}</button>`;
+}
+function bindInspector() {
+  const el = $('#inspector');
+  el.addEventListener('input', e => { if (e.target.id === 'inName') { const m = selMembers()[0]; if (m) { m.name = e.target.value; requestRender(); const r = $(`#memList .mem[data-id="${m.id}"] .nm`); if (r) r.value = m.name; } } });
+  el.addEventListener('change', e => {
+    const m = selMembers()[0]; if (!m) return; const v = parseFloat(e.target.value), id = e.target.id;
+    if (id === 'inName') commit();
+    else if (id === 'inH' && v > 0) { const base = S.set.figH * S.set.fitF; m.sz = v / base; m.h = v; S.manual = true; commit(); }
+    else if (id === 'inX' && !isNaN(v)) { m.x = v; S.manual = true; commit(); }
+    else if (id === 'inY' && !isNaN(v)) { m.y = v; S.manual = true; commit(); }
+  });
+  el.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return; const m = selMembers()[0]; if (!m) return;
+    if (b.dataset.act === 'straight') hangStraight(m); else if (b.dataset.act === 'cardc') alignSel('cardc'); else if (b.dataset.act === 'img') pickMemberImage(m.id);
+  });
+}
+function renderChecks() {
+  const box = $('#checks'), is = S.issues;
+  const er = is.filter(i => i.lvl === 'err').length, wr = is.filter(i => i.lvl === 'warn').length;
+  $('#chkBadge').innerHTML = er ? `<span class="badge err">${er}</span>` : wr ? `<span class="badge warn">${wr}</span>` : S.members.length ? '<span class="badge ok">OK</span>' : '';
+  if (!is.length) { box.innerHTML = S.members.length ? `<div class="okbox">${tr('chkOk')}</div>` : `<p class="hint">${tr('chkEmpty')}</p>`; return; }
+  const lbl = { err: tr('lvlErr'), warn: tr('lvlWarn'), info: tr('lvlInfo') };
+  box.innerHTML = is.map((i, k) => `<button type="button" class="iss ${i.lvl}" data-k="${k}"><b>${lbl[i.lvl]}</b><span>${esc(i.msg)}</span></button>`).join('');
+}
+function bindChecks() {
+  $('#checks').addEventListener('click', e => { const b = e.target.closest('.iss'); if (!b) return; const i = S.issues[+b.dataset.k]; if (i && i.ids.length) { S.sel = new Set(i.ids); syncSel(); } });
+}
+function updateSpecs() {
+  const br = boardRect(), hs = hangSize(); if (S.linksDirty) computeLinks();
+  const lens = S.links.map(l => l.len), avg = lens.length ? lens.reduce((a, b) => a + b, 0) / lens.length : 0;
+  $('#specs').innerHTML = `<div class="stats">
+    <div class="stat"><b>${S.board ? fmt(br.w) + ' × ' + fmt(br.h) : '-'}</b><span>${tr('specCard')}</span></div>
+    <div class="stat"><b>${S.members.length ? fmt(hs.w) + ' × ' + fmt(hs.h) : '-'}</b><span>${tr('specTotal')}</span></div>
+    <div class="stat"><b>${S.members.length}</b><span>${tr('specFigs')}</span></div>
+    <div class="stat"><b>${lens.length ? fmt(avg) : '-'}</b><span>${tr('specAvg')}</span></div></div>
+    <p class="hint">${tr('specHint')}</p>`;
+  updatePosFields();
+}
+
+/* --------------------------------------------------------------- importing */
+function baseName(f) { return f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 24) || tr('member'); }
+async function busy(msg, fn) {
+  toast(msg, 60000);
+  try { await fn(); } catch (e) { console.error(e); toast(tr('errGeneric', { msg: (e && e.message) || e }), 5000); return; }
+  if ($('#toast').textContent === msg) $('#toast').hidden = true;
+}
+function newMember(canvas, name, gen) {
+  const a = buildAsset(canvas, name);
+  return { id: uid(), name, asset: a, x: 0, y: 0, sz: 1, h: S.set.figH, parent: 'auto', gen: gen || 1 };
+}
+const isDemo = () => !!((S.board && S.board.asset.demo) || S.members.some(m => m.asset.demo));
+function dropDemo() { if (S.members.some(m => m.asset.demo)) { S.members = S.members.filter(m => !m.asset.demo); S.base = null; S.rowSizes = null; S.sel.clear(); } }
+
+/* -------------------------------------------------------------------- demo */
+function demoFigure(kind, skin, hair, cloth, hairStyle) {
+  const c = mkCanvas(300, 520), x = c.getContext('2d'), dress = kind === 'w' || kind === 'g';
+  const rr = (a, b, w, h, r, f) => { x.beginPath(); x.roundRect(a, b, w, h, r); x.fillStyle = f; x.fill(); };
+  if (hairStyle === 'long') rr(58, 60, 184, 210, 70, hair);
+  if (dress) {
+    x.fillStyle = cloth; x.beginPath(); x.moveTo(100, 212); x.lineTo(200, 212); x.lineTo(196, 300); x.lineTo(236, 482); x.lineTo(64, 482); x.lineTo(104, 300); x.closePath(); x.fill();
+    x.strokeStyle = 'rgba(120,90,40,.35)'; x.lineWidth = 3; x.beginPath(); x.moveTo(150, 215); x.lineTo(150, 480); x.stroke();
+    x.fillStyle = cloth; for (const sx of [86, 214]) { x.beginPath(); x.arc(sx, 238, 30, 0, 6.3); x.fill(); }
+    x.fillStyle = skin; for (const sx of [74, 226]) { x.beginPath(); x.arc(sx, 330, 17, 0, 6.3); x.fill(); }
+    rr(66, 262, 20, 62, 10, skin); rr(214, 262, 20, 62, 10, skin);
+    x.fillStyle = '#e8d3a6'; x.beginPath(); x.ellipse(120, 486, 30, 12, 0, 0, 6.3); x.ellipse(180, 486, 30, 12, 0, 0, 6.3); x.fill();
+  } else {
+    rr(94, 358, 54, 112, 12, '#1d1d22'); rr(152, 358, 54, 112, 12, '#1d1d22');
+    x.fillStyle = '#0d0d10'; x.beginPath(); x.ellipse(120, 478, 36, 14, 0, 0, 6.3); x.ellipse(180, 478, 36, 14, 0, 0, 6.3); x.fill();
+    x.fillStyle = cloth; x.beginPath(); x.moveTo(92, 214); x.lineTo(208, 214); x.lineTo(218, 366); x.lineTo(82, 366); x.closePath(); x.fill();
+    rr(54, 222, 40, 140, 18, cloth); rr(206, 222, 40, 140, 18, cloth);
+    x.strokeStyle = 'rgba(120,90,40,.4)'; x.lineWidth = 3; x.beginPath(); x.moveTo(150, 216); x.lineTo(150, 364); x.stroke();
+    for (let i = 0; i < 5; i++) { x.beginPath(); x.arc(150, 240 + i * 28, 3.5, 0, 6.3); x.stroke(); }
+    x.fillStyle = skin; for (const sx of [74, 226]) { x.beginPath(); x.arc(sx, 372, 20, 0, 6.3); x.fill(); }
+  }
+  x.fillStyle = skin; x.beginPath(); x.arc(150, 125, 90, 0, 6.3); x.fill();
+  x.fillStyle = hair; x.beginPath();
+  if (hairStyle === 'bald') { x.globalAlpha = 0; } else if (hairStyle === 'long') x.ellipse(150, 98, 92, 74, 0, Math.PI, 6.2832); else x.ellipse(150, 94, 91, 60, 0, Math.PI, 6.2832);
+  x.fill(); x.globalAlpha = 1;
+  x.fillStyle = '#2a1d17'; for (const ex of [118, 182]) { x.beginPath(); x.arc(ex, 132, 7, 0, 6.3); x.fill(); }
+  x.strokeStyle = '#2a1d17'; x.lineWidth = 5; x.lineCap = 'round'; x.beginPath(); x.arc(150, 150, 28, 0.25, Math.PI - 0.25); x.stroke();
+  x.fillStyle = 'rgba(220,100,100,.3)'; for (const ex of [96, 204]) { x.beginPath(); x.arc(ex, 156, 13, 0, 6.3); x.fill(); }
+  return trim(c, 0);
+}
+function demoBoard() {
+  const c = mkCanvas(1500, 1050), x = c.getContext('2d');
+  const rr = (a, b, w, h, r, f) => { x.beginPath(); x.roundRect(a, b, w, h, r); x.fillStyle = f; x.fill(); };
+  rr(10, 10, 1480, 1030, 110, '#fff');
+  const g = x.createLinearGradient(0, 0, 1500, 1050); g.addColorStop(0, '#f0c45a'); g.addColorStop(.5, '#b9822a'); g.addColorStop(1, '#e8b947');
+  rr(34, 34, 1432, 982, 90, g); rr(76, 76, 1348, 898, 60, '#fbf2d9');
+  x.save(); x.beginPath(); x.roundRect(76, 76, 1348, 898, 60); x.clip();
+  for (let i = 0; i < 40; i++) { x.fillStyle = i % 2 ? '#b8312f' : '#2a3f8f'; x.fillRect(76 + i * 34, 940, 34, 34); x.fillRect(76 + i * 34, 76, 34, 24); }
+  x.restore();
+  x.textAlign = 'center'; x.fillStyle = '#5a3a1a'; x.font = 'italic 700 110px Georgia, serif'; x.fillText('Welcome to', 750, 260);
+  x.font = '900 200px Georgia, serif'; x.lineWidth = 12; x.strokeStyle = '#d9a63a'; x.strokeText('DELA CRUZ', 750, 500); x.fillStyle = '#1f3a8a'; x.fillText('DELA CRUZ', 750, 500);
+  x.fillStyle = '#a3262a'; x.beginPath(); x.moveTo(300, 560); x.lineTo(1200, 560); x.lineTo(1250, 650); x.lineTo(1200, 740); x.lineTo(300, 740); x.lineTo(250, 650); x.closePath(); x.fill();
+  x.fillStyle = '#fff'; x.font = 'italic 700 120px Georgia, serif'; x.fillText('Family', 750, 690);
+  x.fillStyle = '#1f3a8a'; x.font = '700 50px Georgia, serif'; x.fillText('Joshua 24:15', 750, 810);
+  x.fillStyle = '#2a2018'; x.font = 'italic 52px Georgia, serif'; x.fillText('"But as for me and my household,', 750, 870); x.fillText('we will serve the Lord."', 750, 925);
+  for (const [fx, fy] of [[150, 150], [1350, 150], [150, 890], [1350, 890]]) { x.fillStyle = '#fff'; for (let i = 0; i < 5; i++) { x.beginPath(); x.ellipse(fx + Math.cos(i * 1.2566) * 34, fy + Math.sin(i * 1.2566) * 34, 34, 22, i * 1.2566, 0, 6.3); x.fill(); } x.fillStyle = '#f0b429'; x.beginPath(); x.arc(fx, fy, 16, 0, 6.3); x.fill(); }
+  return c;
+}
+function loadDemo() {
+  const skins = ['#f0c9a4', '#e6b88f', '#d9a87c', '#f3d2b0'];
+  const defs = [
+    [tr('demoLolo'), 'm', 0, '#4a4a4a', '#efe0bf', 'short', 1, 1], [tr('demoLola'), 'w', 1, '#8a8a8a', '#e9d3ab', 'long', 1, 1],
+    [tr('demoTatay'), 'm', 2, '#1c1410', '#f1e2c2', 'short', 2, 1], [tr('demoNanay'), 'w', 0, '#241812', '#ead6b0', 'long', 2, 1],
+    [tr('demoTito'), 'm', 3, '#2a1d17', '#efdfbc', 'bald', 2, 1], [tr('demoKuya'), 'm', 1, '#1c1410', '#f1e2c2', 'short', 3, 0.9],
+    [tr('demoAte'), 'g', 2, '#2a1d17', '#e7c8c0', 'long', 3, 0.88], [tr('demoBunso'), 'm', 0, '#1c1410', '#efe0bf', 'short', 3, 0.78], [tr('demoBaby'), 'g', 3, '#2a1d17', '#e9d3ab', 'long', 3, 0.72]
+  ];
+  S.board = { asset: buildAsset(demoBoard(), tr('demoCard')), wCm: 30, hCm: 21, lock: true, sized: false, blank: false, title: '' }; S.board.asset.demo = true;
+  S.members = defs.map(d => { const m = newMember(demoFigure(d[1], skins[d[2]], d[3], d[4], d[5]), d[0], d[6]); m.asset.demo = true; m.sz = d[7]; return m; });
+  S.rowSizes = null; S.base = null; S.sel.clear(); S.manual = false; S.meta = { customer: '', note: '', lockCount: false };
+  Object.assign(S.set, { gap: 0.8, chain: 3, figH: 9, fitF: 1, fit: true, maxKids: 2, lmode: 'rows', place: 'grid' });
+  applyHeights(); layoutRows(); resetHistory(); fitView();
+}
+
+/* ------------------------------------------------------------------------
+   Members (up to 20, with empty slots), card size, picture upload, drafts
+   ------------------------------------------------------------------------ */
+const customerLocked = () => S.mode === 'customer' && !!S.meta.lockCount;
+const num1 = v => String(Math.round(v * 10) / 10);
+const isDefaultName = n => !n || /^Member \d+$/.test(n);
+function nextName() { const used = new Set(S.members.map(m => m.name)); for (let k = 1; ; k++) { const n = tr('member') + ' ' + k; if (!used.has(n)) return n; } }
+function niceName(f) {
+  const b = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+  if (b.length < 2 || /\d{4,}/.test(b) || /^(img|dsc|dcim|image|photo|pxl|screenshot|whatsapp|received|picsart|snap|untitled)/i.test(b)) return null;
+  return b.slice(0, 24);
+}
+
+/* ---- placeholder figure (an empty member slot) ---- */
+let PH = null;
+function phAsset() {
+  if (PH && assets.has(PH.id)) return PH;
+  const c = mkCanvas(300, 520), x = c.getContext('2d'), fill = '#d7deee', ink = '#8d99b9';
+  x.fillStyle = fill; x.strokeStyle = ink; x.lineWidth = 6; x.lineJoin = 'round';
+  const rr = (a, b, w, h, r) => { x.beginPath(); x.roundRect(a, b, w, h, r); x.fill(); x.stroke(); };
+  rr(92, 340, 54, 150, 22); rr(154, 340, 54, 150, 22);
+  rr(56, 214, 40, 150, 20); rr(204, 214, 40, 150, 20);
+  rr(80, 196, 140, 170, 34);
+  x.beginPath(); x.arc(150, 112, 88, 0, 6.2832); x.fill(); x.stroke();
+  x.beginPath(); x.arc(150, 282, 36, 0, 6.2832); x.fillStyle = '#fff'; x.fill(); x.stroke();
+  x.lineWidth = 9; x.lineCap = 'round'; x.beginPath(); x.moveTo(150, 264); x.lineTo(150, 300); x.moveTo(132, 282); x.lineTo(168, 282); x.stroke();
+  PH = buildAsset(addOutline(trim(c, 0), 7), 'placeholder'); PH.ph = true; return PH;
+}
+function newSlot() { return { id: uid(), name: nextName(), asset: phAsset(), x: 0, y: 0, sz: 1, h: S.set.figH, parent: 'auto', gen: 1 }; }
+
+/* ---- picture -> figure canvas (cutout when it already has / clearly has a plain background, otherwise a photo) ---- */
+function photoCard(c) {
+  const ratio = 0.75; let cw = c.width, ch = cw / ratio; if (ch > c.height) { ch = c.height; cw = ch * ratio; }
+  const sx = (c.width - cw) / 2, sy = Math.max(0, Math.min(c.height - ch, (c.height - ch) * 0.3));
+  const H = Math.min(640, Math.round(ch)), W = Math.round(H * ratio), o = mkCanvas(W, H), x = o.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.save(); x.beginPath(); x.roundRect(0, 0, W, H, W * 0.14); x.clip(); x.drawImage(c, sx, sy, cw, ch, 0, 0, W, H); x.restore();
+  return addOutline(o, Math.max(2, Math.round(H * 0.02)));
+}
+function looksCutout(c) {
+  const W = c.width, H = c.height, d = c.getContext('2d').getImageData(0, 0, W, H).data, ms = [];
+  for (const [u, v] of [[0, 0], [.5, 0], [1, 0], [0, .5], [1, .5], [0, 1], [.5, 1], [1, 1]]) {
+    const x0 = clamp(Math.round(u * (W - 1)) - 3, 0, Math.max(0, W - 7)), y0 = clamp(Math.round(v * (H - 1)) - 3, 0, Math.max(0, H - 7));
+    let r = 0, g = 0, b = 0, k = 0; const px = [];
+    for (let y = y0; y < Math.min(H, y0 + 7); y++) for (let x = x0; x < Math.min(W, x0 + 7); x++) { const i = (y * W + x) * 4; px.push(d[i], d[i + 1], d[i + 2]); r += d[i]; g += d[i + 1]; b += d[i + 2]; k++; }
+    r /= k; g /= k; b /= k; let dev = 0; for (let i = 0; i < px.length; i += 3) dev = Math.max(dev, Math.abs(px[i] - r) + Math.abs(px[i + 1] - g) + Math.abs(px[i + 2] - b));
+    ms.push([r, g, b, dev]);
+  }
+  return ms.every(m => m[3] < 60 && Math.hypot(m[0] - ms[0][0], m[1] - ms[0][1], m[2] - ms[0][2]) < 45);
+}
+function opaqueFraction(c) { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0, t = 0; for (let i = 3; i < d.length; i += 16) { t++; if (d[i] > 40) n++; } return t ? n / t : 0; }
+async function memberCanvas(file) {
+  const im = await fileToImage(file), c = toCanvas(im, 1600), alpha = hasAlpha(c), mode = $('#imgMode').value;
+  if (alpha) return finishCanvas(c, { outline: false, maxH: 640 });
+  if (mode !== 'photo' && (mode === 'cut' || looksCutout(c))) {
+    const t = mkCanvas(c.width, c.height); t.getContext('2d').drawImage(c, 0, 0); removeBg(t, 30);
+    const f = opaqueFraction(t);
+    if (mode === 'cut' || (f > 0.06 && f < 0.9)) return finishCanvas(t, { outline: $('#optOutline').checked, maxH: 640 });
+  }
+  return photoCard(c);
+}
+
+/* ---- put pictures into slots (empty slots first, then new members up to the limit) ---- */
+function setImage(m, it) {
+  const t0 = topAnchor(m);
+  m.asset = buildAsset(it.canvas, it.name || m.name);
+  if (it.name && isDefaultName(m.name)) m.name = it.name;
+  const t1 = topAnchor(m); m.x += t0.x - t1.x; m.y += t0.y - t1.y;
+}
+function relayout() { if (S.members.length) autoLayout(); else { S.manual = false; commit(); fitView(); } }
+function placeItems(items, targetId) {
+  if (!items.length) return;
+  dropDemo();
+  let skipped = 0, added = 0;
+  const empties = () => S.members.filter(m => m.asset.ph), canGrow = () => !customerLocked() && S.members.length < MAXM;
+  items.forEach((it, i) => {
+    let m = (i === 0 && targetId) ? S.members.find(x => x.id === targetId) : null;
+    if (!m) m = empties()[0];
+    if (m) setImage(m, it);
+    else if (canGrow()) { S.members.push(newMember(it.canvas, it.name || nextName(), 1)); added++; }
+    else skipped++;
+  });
+  applyHeights();
+  if (added) S.rowSizes = null;
+  if (added || !S.manual) autoLayout(); else { S.linksDirty = true; commit(); }
+  if (skipped) toast(tr(customerLocked() ? 'countLocked' : 'maxReached', { max: MAXM, n: skipped }), 5000);
+}
+async function addFigures(files, targetId) {
+  await busy(tr('busyFigs'), async () => {
+    const items = [];
+    for (const f of files) items.push({ canvas: await memberCanvas(f), name: niceName(f) });
+    placeItems(items, targetId);
+  });
+}
+async function addSheet(file) {
+  await busy(tr('busySheet'), async () => {
+    const { c, alpha } = await prepCanvas(file, { maxDim: 3000 });
+    const parts = splitSheet(c); if (!parts.length) throw new Error(tr('errSheet'));
+    const out = $('#optOutline').checked && !alpha;
+    placeItems(parts.map(p => ({ canvas: finishCanvas(p, { outline: out, maxH: 640 }), name: null })));
+    toast(tr('sheetSplit', { n: parts.length }), 4200);
+  });
+}
+let pendingPic = null;
+function pickMemberImage(id) { pendingPic = id; $('#fMember').click(); }
+
+/* ---- number of members ---- */
+function autoGens() {
+  const n = S.members.length; if (n < 2 || !S.members.every(m => m.gen === 1)) return;
+  let i = 0; defaultSizes(n).forEach((sz, r) => { for (let k = 0; k < sz; k++) if (S.members[i]) S.members[i++].gen = Math.min(6, r + 1); });
+}
+function setMemberCount(n) {
+  if (customerLocked()) { updateLayoutPanel(); return; }
+  n = clamp(Math.round(n) || 0, 0, MAXM); const cur = S.members.length;
+  if (n === cur) { updateLayoutPanel(); return; }
+  if (n > cur) { for (let i = cur; i < n; i++) S.members.push(newSlot()); }
+  else {
+    let need = cur - n; const ids = [];
+    for (let i = S.members.length - 1; i >= 0 && need > 0; i--) if (S.members[i].asset.ph) { ids.push(S.members[i].id); need--; }
+    for (let i = S.members.length - 1; i >= 0 && need > 0; i--) if (!ids.includes(S.members[i].id)) { ids.push(S.members[i].id); need--; }
+    const withPic = ids.filter(id => !S.members.find(m => m.id === id).asset.ph).length;
+    S.members = S.members.filter(m => !ids.includes(m.id));
+    for (const m of S.members) if (ids.includes(m.parent)) m.parent = 'auto';
+    ids.forEach(id => S.sel.delete(id));
+    if (withPic) toast(tr('countRemoved', { n: withPic }), 4500);
+  }
+  S.rowSizes = null; applyHeights(); autoGens(); relayout();
+}
+
+/* ---- card: blank card, actual size, ratio lock ---- */
+function makeBlankCard(wCm, hCm, title) {
+  const k = 1000 / Math.max(wCm, hCm), W = Math.round(wCm * k), H = Math.round(hCm * k), m = Math.min(W, H);
+  const c = mkCanvas(W, H), x = c.getContext('2d');
+  const rr = (a, b, w, h, r, f) => { x.beginPath(); x.roundRect(a, b, w, h, r); x.fillStyle = f; x.fill(); };
+  rr(0, 0, W, H, m * 0.11, '#fff');
+  const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#f0c45a'); g.addColorStop(0.5, '#b9822a'); g.addColorStop(1, '#e8b947');
+  rr(m * 0.025, m * 0.025, W - m * 0.05, H - m * 0.05, m * 0.09, g);
+  rr(m * 0.065, m * 0.065, W - m * 0.13, H - m * 0.13, m * 0.06, '#fbf2d9');
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillStyle = '#5a3a1a'; x.font = `italic 700 ${m * 0.085}px Georgia, serif`; x.fillText('Welcome to', W / 2, H * 0.27);
+  const name = (title || 'Family Name').toUpperCase(); let fs = m * 0.2; x.font = `900 ${fs}px Georgia, serif`;
+  const w = x.measureText(name).width; if (w > W * 0.78) { fs *= W * 0.78 / w; x.font = `900 ${fs}px Georgia, serif`; }
+  x.lineWidth = fs * 0.06; x.strokeStyle = '#d9a63a'; x.strokeText(name, W / 2, H * 0.5); x.fillStyle = '#1f3a8a'; x.fillText(name, W / 2, H * 0.5);
+  rr(W * 0.2, H * 0.63, W * 0.6, H * 0.15, m * 0.03, '#a3262a');
+  x.fillStyle = '#fff'; x.font = `italic 700 ${m * 0.085}px Georgia, serif`; x.fillText('Family', W / 2, H * 0.705);
+  return c;
+}
+function rebuildBlank() { const b = S.board; b.asset = buildAsset(makeBlankCard(b.wCm, b.hCm, b.title), 'Card'); b.blank = true; }
+function useBlank() {
+  const prev = S.board, w = prev ? prev.wCm : 30, h = prev ? boardRect().h : 21;
+  S.board = { asset: null, wCm: w, hCm: h, lock: false, sized: !!(prev && prev.sized), blank: true, title: (prev && prev.title) || '' };
+  rebuildBlank(); S.base = null; relayout();
+}
+async function addBoard(file) {
+  await busy(tr('busyBoard'), async () => {
+    let { c, alpha } = await prepCanvas(file, { maxDim: 2200, tol: 34 });
+    if (!alpha) { const parts = splitSheet(c); if (parts.length > 1) c = parts.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a)); }   // drop stray bits left by the background
+    const fc = finishCanvas(c, { outline: $('#optOutline').checked && !alpha, board: true, maxH: 1500, maxW: 1900 });
+    const prev = S.board, asset = buildAsset(fc, 'Card'), ratio = asset.w / asset.h, w = prev ? prev.wCm : 30;
+    if (prev && prev.sized) {
+      const h = boardRect().h; S.board = { asset, wCm: w, hCm: h, lock: false, sized: true, blank: false, title: prev.title || '' };
+    } else S.board = { asset, wCm: w, hCm: w / ratio, lock: true, sized: false, blank: false, title: (prev && prev.title) || '' };
+    S.base = null; relayout();
+  });
+}
+function setBoardSize(w, h) {
+  if (!S.board) useBlank();
+  const b = S.board; b.wCm = clamp(w, 5, 150); b.hCm = clamp(h, 5, 150); b.sized = true;
+  if (b.blank) rebuildBlank();
+  relayout();
+}
+const boardRatio = () => S.board && !S.board.blank ? S.board.asset.w / S.board.asset.h : 0;
+function syncCardFields() {
+  const b = S.board, r = boardRect(), blank = !!(b && b.blank);
+  const set = (id, v) => { const e = $('#' + id); if (e && document.activeElement !== e) e.value = v; };
+  set('boardW', num1(r.w)); set('boardH', num1(r.h)); set('cardTitle', b ? b.title || '' : '');
+  const key = num1(r.w) + 'x' + num1(r.h), ps = $('#boardPreset'); ps.value = [...ps.options].some(o => o.value === key) ? key : '';
+  $('#lockWrap').hidden = !b || blank; $('#boardLock').checked = !!(b && b.lock); $('#titleWrap').hidden = !blank;
+  const hint = $('#cardHint'), ir = boardRatio();
+  if (b && !blank && !b.lock && Math.abs(ir - r.w / r.h) / ir > 0.04) { hint.textContent = tr('cardStretch', { a: ir.toFixed(2), b: (r.w / r.h).toFixed(2) }); hint.hidden = false; } else hint.hidden = true;
+}
+function syncCountFields() {
+  const n = S.members.length, lk = customerLocked(), e = $('#memN');
+  if (document.activeElement !== e) e.value = n;
+  e.disabled = lk; $('#cntMinus').disabled = lk || n <= 0; $('#cntPlus').disabled = lk || n >= MAXM;
+  $('#lockCount').checked = !!S.meta.lockCount;
+}
+function bindCardUI() {
+  $('#btnBlank').onclick = useBlank;
+  $('#boardW').addEventListener('change', e => { const v = parseFloat(e.target.value); if (!(v >= 5)) { syncCardFields(); return; } if (!S.board) useBlank(); const b = S.board, ir = boardRatio(); setBoardSize(v, b.lock && ir ? v / ir : boardRect().h); });
+  $('#boardH').addEventListener('change', e => { const v = parseFloat(e.target.value); if (!(v >= 5)) { syncCardFields(); return; } if (!S.board) useBlank(); const b = S.board, ir = boardRatio(); setBoardSize(b.lock && ir ? v * ir : b.wCm, v); });
+  $('#boardPreset').addEventListener('change', e => { if (!e.target.value) return; if (!S.board) useBlank(); const [w, h] = e.target.value.split('x').map(Number); if (S.board.asset && !S.board.blank) S.board.lock = false; setBoardSize(w, h); });
+  $('#boardLock').addEventListener('change', e => {
+    const b = S.board; if (!b || b.blank) return; b.lock = e.target.checked;
+    if (b.lock) { b.hCm = b.wCm / boardRatio(); b.sized = false; relayout(); } else { commit(); }
+  });
+  $('#cardTitle').addEventListener('change', e => { const b = S.board; if (!b || !b.blank) return; b.title = e.target.value.trim(); rebuildBlank(); commit(); });
+  $('#cntMinus').onclick = () => setMemberCount(S.members.length - 1);
+  $('#cntPlus').onclick = () => setMemberCount(S.members.length + 1);
+  $('#memN').addEventListener('change', e => setMemberCount(parseInt(e.target.value, 10)));
+  $('#lockCount').addEventListener('change', e => { S.meta.lockCount = e.target.checked; scheduleSave(); });
+  $('#fMember').onchange = e => { const f = e.target.files[0], id = pendingPic; e.target.value = ''; pendingPic = null; if (f && id) addFigures([f], id); };
+  /* drag pictures from the desktop onto a member, or anywhere on the stage */
+  const hasFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+  const clear = () => { $$('.mem.drop').forEach(x => x.classList.remove('drop')); $('#stage').classList.remove('dropping'); };
+  for (const ev of ['dragenter', 'dragover']) document.addEventListener(ev, e => {
+    if (!hasFiles(e)) return; e.preventDefault(); clear();
+    const row = e.target.closest && e.target.closest('.mem'); if (row) row.classList.add('drop'); else if (e.target.closest && e.target.closest('#stage')) $('#stage').classList.add('dropping');
+  });
+  document.addEventListener('dragleave', e => { if (!e.relatedTarget) clear(); });
+  document.addEventListener('drop', e => {
+    if (!hasFiles(e)) return; e.preventDefault(); clear();
+    const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/')); if (!files.length) return;
+    const row = e.target.closest && e.target.closest('.mem'); addFigures(files, row ? row.dataset.id : null);
+  });
+}
+
+/* ---- autosave: the last project stays on this device (IndexedDB), so a closed tab loses nothing ---- */
+const idb = {
+  db: null,
+  open() { return this.db || (this.db = new Promise((res, rej) => { const r = indexedDB.open('fss', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); })); },
+  async run(mode, fn) { const db = await this.open(); return new Promise((res, rej) => { const q = fn(db.transaction('kv', mode).objectStore('kv')); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); },
+  get(k) { return this.run('readonly', s => s.get(k)); },
+  set(k, v) { return this.run('readwrite', s => s.put(v, k)); },
+  del(k) { return this.run('readwrite', s => s.delete(k)); }
+};
+let saveT = 0;
+function scheduleSave() { clearTimeout(saveT); saveT = setTimeout(saveDraft, 1500); }
+async function saveDraft() {
+  try { if (isDemo() || !(S.members.length || S.board)) return; await idb.set('draft', serialize(S.mode === 'customer' ? 'customer' : 'shop')); } catch (e) { /* storage unavailable or full */ }
+}
+async function restoreDraft() {
+  try { const d = await idb.get('draft'); if (!d) return false; await loadProject(d); return true; } catch (e) { return false; }
+}
+function dropDraft() { clearTimeout(saveT); try { idb.del('draft').catch(() => {}); } catch (e) { /* ignore */ } }
+function newProject() {
+  S.members = []; S.sel.clear(); S.base = null; S.demo = false; S.rowSizes = null; S.manual = false; S.ghost = false;
+  S.meta = { customer: '', note: '', lockCount: false }; S.board = null; S.set.fitF = 1;
+  useBlank(); resetHistory(); fitView(); saveDraft();
+}
+
+/* ------------------------------------------------------- export / project */
+let DL = null;
+(async () => { try { if (window.claude && window.claude.use) DL = await window.claude.use('downloads'); } catch (e) { DL = null; } })();
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+async function saveBlob(name, blob) {
+  if (DL) {
+    try { await DL.save({ filename: name, data: blob }); toast(tr('saved', { name })); }
+    catch (e) { if (e && e.code === 'declined') return; toast(tr('saveFail', { code: (e && e.code) || 'error' }), 4000); }
+    return;
+  }
+  if (isIOS && isStandalone() && navigator.canShare) {   // installed iOS app: downloads are flaky, use the share sheet
+    try { const f = new File([blob], name, { type: blob.type || 'application/octet-stream' }); if (navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; } }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+  catch (e) { toast(tr('noDownload'), 4000); }
+}
+const canvasBlob = c => new Promise(res => c.toBlob(res, 'image/png'));
+const slug = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'layout';
+function renderExport(o) {
+  o = o || {}; const b = sceneBounds(), pad = 1;
+  const w = b.x1 - b.x0 + pad * 2, h = b.y1 - b.y0 + pad * 2, k = Math.min(o.k || 70, (o.maxDim || 2600) / Math.max(w, h));
+  const c = mkCanvas(w * k, h * k), x = c.getContext('2d');
+  x.fillStyle = '#f5f5f8'; x.fillRect(0, 0, c.width, c.height);
+  drawScene(x, { k, ox: (pad - b.x0) * k, oy: (pad - b.y0) * k, dpr: 1, names: o.names !== false, ghost: false });
+  return c;
+}
+function specRows() {
+  if (S.linksDirty) computeLinks();
+  return S.members.slice().sort((a, b) => (Math.abs(a.y - b.y) > 2 ? a.y - b.y : a.x - b.x)).map((m, i) => {
+    const l = S.links.find(k => k.child === m), p = l && l.pid !== 'board' ? S.members.find(o => o.id === l.pid) : null;
+    return { n: i + 1, name: m.name || tr('member'), h: m.h, x: m.x, y: m.y, hx: l ? l.bx : m.x, hy: l ? l.by : m.y, parent: l ? (p ? p.name : tr('parentCard')) : '-', len: l ? l.len : 0 };
+  });
+}
+function specText() {
+  const br = boardRect(), hs = hangSize(), rows = specRows(), L = [];
+  L.push(tr('txtTitle'));
+  if (S.meta.customer) L.push('Customer: ' + S.meta.customer);
+  L.push(tr('txtSummary', { card: `${fmt(br.w)} x ${fmt(br.h)}`, total: `${fmt(hs.w)} x ${fmt(hs.h)}`, n: rows.length }));
+  if (S.meta.note) L.push('Note: ' + S.meta.note);
+  L.push(tr('txtRef'), '');
+  rows.forEach(r => L.push(tr('txtRow', { n: r.n, name: r.name, h: fmt(r.h), x: fmt(r.x), y: fmt(r.y), hx: fmt(r.hx), hy: fmt(r.hy), parent: r.parent, len: fmt(r.len) })));
+  return L.join('\n');
+}
+function renderSheet() {
+  const prev = renderExport({ k: 60, maxDim: 1500 }), rows = specRows(), br = boardRect(), hs = hangSize();
+  const W = 2000, pvW = Math.min(1060, prev.width), sc = pvW / prev.width, pvH = prev.height * sc, rowH = 44, tableH = 130 + rows.length * rowH;
+  const H = Math.max(pvH, tableH) + 250, c = mkCanvas(W, H), x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#1b2336'; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.font = '700 48px "Bricolage Grotesque", Figtree, system-ui, sans-serif'; x.fillText(tr('shTitle'), 50, 78);
+  x.font = '500 28px Figtree, system-ui, sans-serif'; x.fillStyle = '#566079';
+  x.fillText((S.meta.customer ? tr('shCustomer') + S.meta.customer + '   ·   ' : '') + tr('shLine', { card: `${fmt(br.w)} × ${fmt(br.h)}`, total: `${fmt(hs.w)} × ${fmt(hs.h)}`, n: rows.length }), 50, 124);
+  if (S.meta.note) { x.fillText(tr('shNote') + S.meta.note.slice(0, 120), 50, 164); }
+  x.drawImage(prev, 50, 200, pvW, pvH);
+  const tx = 1160, ty = 210; x.fillStyle = '#566079'; x.font = '700 22px Figtree, system-ui, sans-serif';
+  const cols = [[tx, '#'], [tx + 44, tr('shColName')], [tx + 250, tr('shColH')], [tx + 345, tr('shColHole')], [tx + 530, tr('shColParent')], [tx + 685, tr('shColChain')]];
+  cols.forEach(([cx0, t]) => x.fillText(t, cx0, ty)); x.fillRect(tx, ty + 12, 780, 2);
+  x.font = '500 24px Figtree, system-ui, sans-serif'; x.fillStyle = '#1b2336';
+  rows.forEach((r, i) => {
+    const y = ty + 52 + i * rowH; if (i % 2) { x.fillStyle = '#f4f5f9'; x.fillRect(tx - 8, y - 30, 796, rowH); x.fillStyle = '#1b2336'; }
+    x.fillText(String(r.n), tx, y); x.fillText(r.name.slice(0, 13), tx + 44, y); x.fillText(fmt(r.h) + ' cm', tx + 250, y);
+    x.fillText(`${fmt(r.hx)}, ${fmt(r.hy)}`, tx + 345, y); x.fillText(r.parent.slice(0, 9), tx + 530, y); x.fillText(fmt(r.len) + ' cm', tx + 685, y);
+  });
+  x.fillStyle = '#566079'; x.font = '500 22px Figtree, system-ui, sans-serif';
+  x.fillText(tr('shFoot'), 50, H - 36);
+  return c;
+}
+function serialize(openAs) {
+  const used = new Set(S.members.map(m => m.asset.id)); if (S.board && !S.board.blank) used.add(S.board.asset.id);
+  const A = {}; used.forEach(id => { const a = assets.get(id); A[id] = { name: a.name, url: a.png || (a.png = a.canvas.toDataURL('image/png')), ph: a.ph ? 1 : 0 }; });
+  if (S.mode === 'shop' && openAs === 'customer') S.base = { fitF: S.set.fitF, m: Object.fromEntries(S.members.map(m => [m.id, { x: m.x, y: m.y, h: m.h, sz: m.sz, parent: m.parent }])) };
+  return JSON.stringify({
+    app: 'family-sign-studio', v: 1, openAs, savedAt: new Date().toISOString(),
+    board: S.board ? { a: S.board.blank ? null : S.board.asset.id, wCm: S.board.wCm, hCm: boardRect().h, lock: S.board.lock, sized: S.board.sized, blank: !!S.board.blank, title: S.board.title || '' } : null, assets: A,
+    members: S.members.map(m => ({ id: m.id, name: m.name, a: m.asset.id, x: m.x, y: m.y, sz: m.sz, parent: m.parent, gen: m.gen })),
+    set: S.set, rowSizes: S.rowSizes, base: S.base, meta: S.meta
+  });
+}
+async function loadProject(text) {
+  const o = JSON.parse(text); if (o.app !== 'family-sign-studio') throw new Error(tr('errProject'));
+  const map = new Map();
+  for (const [id, a] of Object.entries(o.assets)) {
+    const im = await loadImage(a.url), c = mkCanvas(im.naturalWidth, im.naturalHeight); c.getContext('2d').drawImage(im, 0, 0);
+    const asset = buildAsset(c, a.name, id); if (a.ph) { asset.ph = true; PH = asset; }
+    map.set(id, asset);
+  }
+  const bo = o.board; S.board = null;
+  if (bo) {
+    const asset = bo.blank ? null : map.get(bo.a);
+    if (bo.blank || asset) {
+      S.board = { asset, wCm: bo.wCm, hCm: bo.hCm || (asset ? bo.wCm * asset.h / asset.w : bo.wCm * 0.7), lock: bo.lock === undefined ? !bo.blank : bo.lock, sized: !!bo.sized, blank: !!bo.blank, title: bo.title || '' };
+      if (bo.blank) rebuildBlank();
+    }
+  }
+  Object.assign(S.set, o.set || {}); S.rowSizes = o.rowSizes || null;
+  S.members = o.members.map(m => ({ id: m.id, name: m.name, asset: map.get(m.a), x: m.x, y: m.y, sz: m.sz, h: 0, parent: m.parent, gen: m.gen })).filter(m => m.asset);
+  applyHeights(); S.base = o.base || null; S.meta = Object.assign({ customer: '', note: '', lockCount: false }, o.meta || {}); S.demo = false; S.manual = true; S.sel.clear(); S.ghost = false;
+  setMode(o.openAs === 'customer' ? 'customer' : 'shop');
+  resetHistory(); fitView();
+  if (S.mode === 'shop' && S.meta.customer) toast(tr('opened', { who: S.meta.customer }) + (S.base ? tr('openedGhost') : ''), 5000);
+}
+function revertBase() {
+  if (!S.base) return;
+  S.set.fitF = S.base.fitF || 1;
+  for (const m of S.members) { const b = S.base.m[m.id]; if (b) { m.x = b.x; m.y = b.y; m.sz = b.sz; m.parent = b.parent || 'auto'; } }
+  applyHeights(); commit(); toast(tr('reverted'));
+}
+function setMode(m) {
+  S.mode = m; $('#app').dataset.mode = m;
+  $('#modeShop').setAttribute('aria-pressed', String(m === 'shop')); $('#modeCust').setAttribute('aria-pressed', String(m === 'customer'));
+  refreshUI(); requestAnimationFrame(() => { resizeStage(); });
+}
+const dlRow = (key, title, sub, btn) => `<div class="dlrow"><div><b>${title}</b><small>${sub}</small></div><button type="button" class="btn" data-dl="${key}">${btn || tr('download')}</button></div>`;
+function doDl(key) {
+  const nm = slug(S.meta.customer);
+  if (key === 'preview') return canvasBlob(renderExport({ k: 70 })).then(b => saveBlob(`sign-preview-${nm}.png`, b));
+  if (key === 'sheet') return canvasBlob(renderSheet()).then(b => saveBlob(`sign-specs-${nm}.png`, b));
+  if (key === 'projCust') return saveBlob(`sign-for-customer-${nm}.json`, new Blob([serialize('customer')], { type: 'application/json' }));
+  if (key === 'projShop') return saveBlob(`sign-project-${nm}.json`, new Blob([serialize('shop')], { type: 'application/json' }));
+  if (key === 'projSend') return saveBlob(`sign-from-customer-${nm}.json`, new Blob([serialize('shop')], { type: 'application/json' }));
+  if (key === 'copy') {
+    const t = specText(); const ta = $('#specTa'); if (ta) { ta.value = t; ta.hidden = false; ta.select(); }
+    try { return navigator.clipboard.writeText(t).then(() => toast(tr('copied')), () => toast(tr('copyManual'))); } catch (e) { toast(tr('copyManual')); }
+  }
+}
+function bindModal(root) {
+  root.addEventListener('click', e => { const b = e.target.closest('[data-dl]'); if (b) doDl(b.dataset.dl); });
+  const n = $('#mCust', root), t = $('#mNote', root);
+  if (n) n.addEventListener('input', () => { S.meta.customer = n.value; });
+  if (t) t.addEventListener('input', () => { S.meta.note = t.value; });
+}
+function exportModal() {
+  computeChecks(); const bad = S.issues.filter(i => i.lvl === 'err').length;
+  openModal(tr('exportTitle'), `
+    ${bad ? `<div class="iss err" style="cursor:default"><b>${tr('lvlErr')}</b><span>${tr('exportBad', { n: bad })}</span></div>` : ''}
+    <label class="fld" for="mCust">${tr('custName')}<input id="mCust" class="txt" value="${esc(S.meta.customer)}" placeholder="${tr('custNamePh')}"></label>
+    <label class="fld" for="mNote">${tr('noteProd')}<input id="mNote" class="txt" value="${esc(S.meta.note)}" placeholder="${tr('noteProdPh')}"></label>
+    ${dlRow('preview', tr('dlPreview'), tr('dlPreviewSub'))}
+    ${dlRow('sheet', tr('dlSheet'), tr('dlSheetSub'))}
+    ${dlRow('projCust', tr('dlProjCust'), tr('dlProjCustSub'))}
+    ${dlRow('projShop', tr('dlProjShop'), tr('dlProjShopSub'))}
+    ${dlRow('copy', tr('dlCopy'), tr('dlCopySub'), tr('copyBtn'))}
+    <textarea class="txt" id="specTa" hidden readonly aria-label="${tr('specsAria')}"></textarea>
+    <p class="hint">${tr('exportHint')}</p>`, bindModal);
+}
+function sendModal() {
+  computeChecks(); const bad = S.issues.filter(i => i.lvl === 'err').length;
+  const pv = renderExport({ k: 28, maxDim: 900 }).toDataURL('image/png');
+  openModal(tr('sendTitle'), `
+    ${bad ? `<div class="iss warn" style="cursor:default"><b>${tr('lvlWarn')}</b><span>${tr('sendBad', { n: bad })}</span></div>` : ''}
+    <img class="pv" src="${pv}" alt="${tr('sendPvAlt')}">
+    <label class="fld" for="mCust">${tr('yourName')}<input id="mCust" class="txt" value="${esc(S.meta.customer)}" placeholder="${tr('yourNamePh')}"></label>
+    <label class="fld" for="mNote">${tr('noteShop')}<input id="mNote" class="txt" value="${esc(S.meta.note)}" placeholder="${tr('noteShopPh')}"></label>
+    ${dlRow('projSend', tr('dlProjSend'), tr('dlProjSendSub'))}
+    ${dlRow('preview', tr('dlPreviewMine'), tr('dlPreviewMineSub'))}
+    ${dlRow('copy', tr('dlSummary'), tr('dlSummarySub'), tr('copyBtn'))}
+    <textarea class="txt" id="specTa" hidden readonly aria-label="${tr('summaryAria')}"></textarea>
+    <p class="hint">${tr('sendHint')}</p>`, bindModal);
+}
+function confirmModal(msg, yes) {
+  openModal(tr('sure'), `<p style="margin:0">${msg}</p><div class="row"><button type="button" class="btn" id="cNo">${tr('no')}</button><button type="button" class="btn primary" id="cYes">${tr('yesGo')}</button></div>`, root => {
+    $('#cNo', root).onclick = closeModal; $('#cYes', root).onclick = () => { closeModal(); yes(); };
+  });
+}
+function refreshAfterLang(old) {
+  if (isDemo()) S.members.forEach(m => { const i = DEMO_KEYS.findIndex(k => D[k][old === 'en' ? 1 : 0] === m.name); if (i >= 0) m.name = tr(DEMO_KEYS[i]); });
+  closeModal(); refreshUI(); computeChecks(); renderChecks(); updateSpecs(); requestRender();
+}
+
+/* installable app + offline cache */
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; const b = document.getElementById('btnInstall'); if (b) b.hidden = false; });
+window.addEventListener('appinstalled', () => { installEvt = null; const b = document.getElementById('btnInstall'); if (b) b.hidden = true; });
+function installApp() {
+  if (!installEvt) return; const e = installEvt; installEvt = null; $('#btnInstall').hidden = true;
+  e.prompt(); if (e.userChoice) e.userChoice.catch(() => {});
+}
+function registerSW() {
+  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { toast(tr(had ? 'updated' : 'offlineReady'), had ? 9000 : 3500); });
+  navigator.serviceWorker.register('./sw.js').catch(() => { /* offline mode is optional */ });
+}
+
+/* -------------------------------------------------------------------- init */
+function init() {
+  $$('[data-ic]').forEach(el => { el.innerHTML = IC[el.dataset.ic] || ''; });
+  LANG = detectLang(); applyStaticLang();
+  $$('#langSeg button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+  $('#btnInstall').onclick = installApp;
+  cv = $('#cv'); cx = cv.getContext('2d');
+  const cs = getComputedStyle(document.documentElement); COL.stage = cs.getPropertyValue('--stage').trim() || COL.stage; COL.acc = cs.getPropertyValue('--acc').trim() || COL.acc;
+  resizeStage(); initPointer(); bindMembers(); bindLayout(); bindInspector(); bindChecks();
+  new ResizeObserver(() => { resizeStage(); if (!S.view.moved) fitView(); }).observe(cv.parentElement);
+  $('#modeShop').onclick = () => setMode('shop'); $('#modeCust').onclick = () => setMode('customer');
+  $('#btnUndo').onclick = undo; $('#btnRedo').onclick = redo;
+  $('#btnOpen').onclick = () => $('#fProject').click();
+  $('#btnExport').onclick = exportModal; $('#btnSend').onclick = sendModal; $('#btnRevert').onclick = revertBase;
+  $('#mClose').onclick = closeModal; $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+  $('#btnBoard').onclick = () => $('#fBoard').click(); $('#btnFigs').onclick = () => $('#fFigs').click(); $('#btnSheet').onclick = () => $('#fSheet').click();
+  $('#fBoard').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) addBoard(f); };
+  $('#fFigs').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) addFigures(fs); };
+  $('#fSheet').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) addSheet(f); };
+  $('#fProject').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; await busy(tr('busyProject'), async () => loadProject(await f.text())); };
+  $('#btnDemo').onclick = () => confirmModal(tr('confirmDemo'), () => { loadDemo(); dropDraft(); });
+  $('#btnNew').onclick = () => confirmModal(tr('confirmNew'), newProject);
+  $('#zIn').onclick = () => zoomAt(VW / 2, VH / 2, 1.25); $('#zOut').onclick = () => zoomAt(VW / 2, VH / 2, 0.8); $('#zFit').onclick = fitView;
+  $('#tools').addEventListener('click', e => { const b = e.target.closest('button[data-al]'); if (b && !b.disabled) alignSel(b.dataset.al); });
+  bindCardUI(); registerSW();
+  restoreDraft().then(ok => { if (ok) toast(tr('draftRestored'), 3500); else loadDemo(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestRender());
+  window.__app = { tr, setLang, setMemberCount, setBoardSize, useBlank, placeItems, phAsset, newProject, addFigures, customerLocked, saveDraft, restoreDraft, boardRect, MAXM, D, sizeOptions, S, computeChecks, layoutRows, layoutTree, autoLayout, assets, splitSheet, removeBg, trim, buildAsset, loadProject, serialize, renderSheet, renderExport, setMode, addSheet, addBoard, addFigures };
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+</script>
+</body>
+</html>
