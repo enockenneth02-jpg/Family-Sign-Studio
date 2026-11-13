@@ -24,7 +24,7 @@ function renderExport(o) {
   const w = b.x1 - b.x0 + pad * 2, h = b.y1 - b.y0 + pad * 2, k = Math.min(o.k || 70, (o.maxDim || 2600) / Math.max(w, h));
   const c = mkCanvas(w * k, h * k), x = c.getContext('2d');
   x.fillStyle = '#f5f5f8'; x.fillRect(0, 0, c.width, c.height);
-  drawScene(x, { k, ox: (pad - b.x0) * k, oy: (pad - b.y0) * k, dpr: 1, names: o.names !== false, ghost: false });
+  drawScene(x, { k, ox: (pad - b.x0) * k, oy: (pad - b.y0) * k, dpr: 1,names: o.names === undefined ? S.set.names !== false : o.names, ghost: false });
   return c;
 }
 function specRows() {
@@ -45,7 +45,7 @@ function specText() {
   return L.join('\n');
 }
 function renderSheet() {
-  const prev = renderExport({ k: 60, maxDim: 1500 }), rows = specRows(), br = boardRect(), hs = hangSize();
+  const prev = renderExport({ k: 60, maxDim: 1500, names: true }), rows = specRows(), br = boardRect(), hs = hangSize();
   const W = 2000, pvW = Math.min(1060, prev.width), sc = pvW / prev.width, pvH = prev.height * sc, rowH = 44, tableH = 130 + rows.length * rowH;
   const H = Math.max(pvH, tableH) + 250, c = mkCanvas(W, H), x = c.getContext('2d');
   x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
@@ -127,7 +127,7 @@ function doDl(key) {
   }
 }
 function bindModal(root) {
-  root.addEventListener('click', e => { const b = e.target.closest('[data-dl]'); if (b) doDl(b.dataset.dl); });
+  root.onclick = e => { const b = e.target.closest('[data-dl]'); if (b) doDl(b.dataset.dl); };
   const n = $('#mCust', root), t = $('#mNote', root);
   if (n) n.addEventListener('input', () => { S.meta.customer = n.value; });
   if (t) t.addEventListener('input', () => { S.meta.note = t.value; });
